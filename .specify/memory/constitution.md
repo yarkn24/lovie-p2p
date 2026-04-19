@@ -1,50 +1,51 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Lovie P2P Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Financial Integrity (NON-NEGOTIABLE)
+All monetary amounts stored as INTEGER (cents). Never floats. Never strings.
+Display only converts cents → dollars on UI layer. All calculations in cents.
+Every payment operation wrapped in a single database transaction — "all or nothing."
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Security by Default
+Supabase RLS enforced on every table. Users see only their own data.
+Every action endpoint validates: authentication → authorization → business rules.
+No auto-pay: payment requires logged-in session + explicit user action.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Idempotency
+All state-changing operations must be safe to retry.
+Immutable flags: `expired` and `repeated` never revert once set to 1.
+Payment transactions table provides audit log and duplicate prevention.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Expiration Integrity — Double Layer
+Layer 1: Page load checks `expires_at < NOW()` → sets `expired = 1`.
+Layer 2: Hourly cron job bulk-updates all overdue requests.
+Both layers use `AND expired = 0` guard to stay idempotent.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Test Coverage
+E2E tests (Playwright) cover all happy paths and critical error cases.
+Automated screen recording via Playwright video capture.
+Each test resets balance via Supabase admin client before running.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technology Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- **Framework:** Next.js (App Router)
+- **Database:** Supabase (PostgreSQL + RLS)
+- **Auth:** Supabase magic link (email-based)
+- **Styling:** Tailwind CSS
+- **Testing:** Playwright E2E
+- **Deployment:** Vercel
+- **Amounts:** INTEGER cents throughout — no exceptions
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Scope Boundaries
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Included:** Mock balance system, scheduled payments, expiration, repeat logic, unregistered recipients, email notifications, dashboard filters, E2E tests.
+
+**Excluded:** Real payment gateway, admin panel, multi-currency, recurring payments, push notifications.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Constitution supersedes all other decisions. Any deviation must be documented with justification.
+All monetary edge cases default to the strictest safe behavior.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-19
