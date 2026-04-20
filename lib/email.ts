@@ -11,19 +11,7 @@ const FROM = 'Lovie <onboarding@resend.dev>';
 const fmtUSD = (c: number) =>
   (c / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
-// Lovie logo — simplified SVG of the overlapping-circles mark
-const LOGO_SVG = `
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:8px;">
-  <circle cx="12" cy="12" r="8" stroke="url(#g)" stroke-width="2.2" fill="none"/>
-  <circle cx="20" cy="12" r="8" stroke="url(#g)" stroke-width="2.2" fill="none"/>
-  <circle cx="16" cy="19" r="8" stroke="url(#g)" stroke-width="2.2" fill="none"/>
-  <defs>
-    <linearGradient id="g" x1="8" y1="4" x2="24" y2="27" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#2563eb"/>
-      <stop offset="100%" stop-color="#06b6d4"/>
-    </linearGradient>
-  </defs>
-</svg>`;
+const LOGO_IMG = `<img src="${BASE_URL}/lovie-logo.svg" width="32" height="32" alt="Lovie" style="display:inline-block;vertical-align:middle;margin-right:8px;" />`;
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -46,7 +34,7 @@ function shell(statusColor: string, statusLabel: string, title: string, body: st
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td>
-            ${LOGO_SVG}
+            ${LOGO_IMG}
             <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.4px;vertical-align:middle;">lovie</span>
           </td>
           <td align="right">
