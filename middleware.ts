@@ -23,21 +23,21 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!user && request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (!user && request.nextUrl.pathname.startsWith('/requests') && !request.nextUrl.pathname.includes('/requests/')) {
+  if (!user && request.nextUrl.pathname.startsWith('/requests')) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (user && request.nextUrl.pathname === '/auth/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (user && (request.nextUrl.pathname === '/auth/login' || request.nextUrl.pathname === '/auth/signup')) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard', '/requests/:path*', '/auth/login', '/auth/signup'],
+  matcher: ['/', '/requests/:path*', '/auth/:path*'],
 };
