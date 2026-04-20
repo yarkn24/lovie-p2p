@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   badRequest,
@@ -36,6 +35,8 @@ export async function POST(request: NextRequest) {
     details.push({ field: 'recipient_email', issue: 'required' });
   } else if (!isValidEmail(recipient_email)) {
     details.push({ field: 'recipient_email', issue: 'invalid email format' });
+  } else if (recipient_email === user.email) {
+    details.push({ field: 'recipient_email', issue: 'cannot request money from yourself' });
   }
 
   if (amount === undefined || amount === null) {
@@ -44,6 +45,8 @@ export async function POST(request: NextRequest) {
     details.push({ field: 'amount', issue: 'must be a number' });
   } else if (amount <= 0) {
     details.push({ field: 'amount', issue: 'must be greater than zero' });
+  } else if (amount > 10000) {
+    details.push({ field: 'amount', issue: 'must be $10,000 or less' });
   }
 
   if (note && typeof note !== 'string') {
@@ -139,8 +142,7 @@ export async function GET(request: NextRequest) {
 
   let profiles: Record<string, { first_name: string; last_name: string; email: string }> = {};
   if (ids.length > 0) {
-    const admin = createAdminClient();
-    const { data: users } = await admin
+    const { data: users } = await supabase
       .from('users')
       .select('id, first_name, last_name, email')
       .in('id', ids);

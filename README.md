@@ -36,7 +36,7 @@ path end-to-end.
 - **Sender** actions: Cancel pending · Request again (declined or failed, once)
 - Retry on failed scheduled payments: Pay now or Reschedule
 - 7-day expiry with live countdown, enforced server-side
-- Hourly cron jobs (Vercel) for expiry + scheduled execution
+- Daily cron jobs (Vercel, Hobby plan) for expiry + scheduled execution
 - Balance top-up / subtract (admin convenience for the demo)
 - Stripe/PayPal-style structured error envelope (`error.type` / `code` / `details[]`)
 

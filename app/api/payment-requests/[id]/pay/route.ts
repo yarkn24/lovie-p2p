@@ -54,19 +54,6 @@ export async function POST(
     return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
-  const { data: payer } = await supabase
-    .from('users')
-    .select('balance')
-    .eq('id', user.id)
-    .single();
-
-  if (!payer || payer.balance < paymentReq.amount) {
-    return badRequest(
-      'INSUFFICIENT_BALANCE',
-      'Your balance is insufficient to complete this payment.'
-    );
-  }
-
   const { error: execError } = await supabase.rpc('execute_payment', {
     p_request_id: id,
     p_from_user_id: user.id,
