@@ -69,6 +69,7 @@ export default function RequestDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [scheduleDate, setScheduleDate] = useState('');
+  const [paySuccess, setPaySuccess] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -99,6 +100,13 @@ export default function RequestDetail() {
         throw new Error(
           detail ? `${detail.field}: ${detail.issue}` : data.error?.message ?? 'Action failed.'
         );
+      }
+      if (endpoint === 'pay') {
+        // spec: show loading state for 2-3 seconds before success confirmation
+        await new Promise((r) => setTimeout(r, 2500));
+        setReq((prev) => (prev ? { ...prev, ...data } : data));
+        setPaySuccess(true);
+        return;
       }
       if (endpoint === 'repeat') {
         router.push(`/requests/${data.id}`);
@@ -143,6 +151,23 @@ export default function RequestDetail() {
 
   return (
     <Shell user={me}>
+      {paySuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center gap-4 max-w-sm w-full mx-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-3xl">✓</div>
+            <div className="text-xl font-semibold text-[var(--color-ink)]">Payment successful!</div>
+            <div className="text-sm text-[var(--color-muted)] text-center">
+              {fmtUSD(req.amount)} has been sent to {displayName(req.sender, 'the requester')}.
+            </div>
+            <button
+              onClick={() => setPaySuccess(false)}
+              className="btn-brand w-full mt-2"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-3xl mx-auto px-6 py-8">
         <Link href="/" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-ink)]">
           ← Back to dashboard

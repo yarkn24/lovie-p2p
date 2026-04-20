@@ -1,52 +1,52 @@
 # Tasks: P2P Payment Requests
 
 ## Phase 1: Database
-- [ ] Create Supabase project
-- [ ] Write migration: users table
-- [ ] Write migration: payment_requests table + indexes
-- [ ] Write migration: payment_transactions table
-- [ ] Write RLS policies (payment_requests, payment_transactions)
-- [ ] Write RPC: execute_payment()
-- [ ] Write RPC: repeat_payment_request()
-- [ ] Write trigger: handle_new_user() → backfill recipient_id on signup
+- [x] Create Supabase project
+- [x] Write migration: users table
+- [x] Write migration: payment_requests table + indexes
+- [x] Write migration: payment_transactions table
+- [x] Write RLS policies (payment_requests, payment_transactions)
+- [x] Write RPC: execute_payment()
+- [x] Write RPC: repeat_payment_request()
+- [x] Write trigger: handle_new_user() → backfill recipient_id on signup
 
 ## Phase 2: Next.js Setup
-- [ ] Init Next.js 14 project (App Router, TypeScript, Tailwind)
-- [ ] Install dependencies (Supabase, TanStack Query, React Hook Form)
-- [ ] Configure Supabase client (server + browser)
-- [ ] Configure TanStack Query provider
+- [x] Init Next.js 15 project (App Router, TypeScript, Tailwind)
+- [x] Install dependencies (Supabase SSR, sharp)
+- [x] Configure Supabase client (server + browser)
 
 ## Phase 3: Auth
-- [ ] Magic link login page
-- [ ] Auth callback handler
-- [ ] Sign-up page (first_name, last_name collection)
-- [ ] Auth middleware (protected routes)
+- [x] Magic link login page
+- [x] Auth callback handler
+- [x] Sign-up page (first_name, last_name collection)
+- [x] Auth middleware (protected routes)
 
 ## Phase 4: API Endpoints
-- [ ] POST /api/payment-requests (create + bad words validation)
-- [ ] GET /api/payment-requests (list with filters)
-- [ ] GET /api/payment-requests/:id (detail + expiry check on load)
-- [ ] POST /api/payment-requests/:id/pay
-- [ ] POST /api/payment-requests/:id/schedule
-- [ ] POST /api/payment-requests/:id/decline
-- [ ] POST /api/payment-requests/:id/cancel
-- [ ] POST /api/payment-requests/:id/retry
-- [ ] POST /api/payment-requests/:id/repeat
-- [ ] GET /api/cron/expire
-- [ ] GET /api/cron/execute-scheduled
+- [x] POST /api/payment-requests (create + bad words validation)
+- [x] GET /api/payment-requests (list with filters)
+- [x] GET /api/payment-requests/:id (detail + expiry check on load)
+- [x] POST /api/payment-requests/:id/pay
+- [x] POST /api/payment-requests/:id/schedule
+- [x] POST /api/payment-requests/:id/decline
+- [x] POST /api/payment-requests/:id/cancel
+- [x] POST /api/payment-requests/:id/retry
+- [x] POST /api/payment-requests/:id/repeat
+- [x] GET /api/cron/expire
+- [x] GET /api/cron/execute-scheduled
 
 ## Phase 5: Frontend
-- [ ] Dashboard layout (incoming/outgoing tabs)
-- [ ] Balance widget (display + add/subtract input)
-- [ ] Request list with status badges + filters (status, name, amount range)
-- [ ] Create request form
-- [ ] Request detail page (all action buttons)
-- [ ] Shareable link page (gated, shows login prompt if not authenticated)
-- [ ] Real-time countdown timer component
-- [ ] Loading states + error handling
+- [x] Dashboard layout (incoming/outgoing tabs)
+- [x] Balance widget (display + add/subtract input)
+- [x] Request list with status badges + filters (status, name search)
+- [x] Create request form
+- [x] Request detail page (all action buttons)
+- [x] Shareable link page (gated, shows login prompt if not authenticated)
+- [x] Real-time countdown timer component
+- [x] Loading states + error handling
+- [x] Payment success confirmation modal (2-3s delay per spec)
 
 ## Phase 6: Cron + Email
-- [ ] Vercel cron config (vercel.json)
+- [x] Vercel cron config (vercel.json)
 - [ ] Email template: payment request notification (with/without note)
 - [ ] Email trigger on request creation for unregistered recipients
 
@@ -68,8 +68,8 @@
 - [ ] Test: dashboard filters
 
 ## Phase 8: Deploy
-- [ ] Deploy to Vercel
-- [ ] Set environment variables
-- [ ] Configure Vercel Cron
-- [ ] Smoke test on production URL
-- [ ] Write README
+- [x] Deploy to Vercel
+- [x] Set environment variables
+- [x] Configure Vercel Cron
+- [x] Smoke test on production URL
+- [x] Write README
