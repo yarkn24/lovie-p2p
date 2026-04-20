@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata = {
   title: 'Lovie.co — Agent-Native Banking',
   description: 'The agent-native bank where AI agents execute founders\' plain-English financial policies.',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/lovie-logo.png' },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
