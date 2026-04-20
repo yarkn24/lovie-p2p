@@ -11,7 +11,7 @@ const FROM = 'Lovie <onboarding@resend.dev>';
 const fmtUSD = (c: number) =>
   (c / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
-const LOGO_IMG = `<img src="${BASE_URL}/lovie-logo.svg" width="32" height="32" alt="Lovie" style="display:inline-block;vertical-align:middle;margin-right:8px;" />`;
+const LOGO_IMG = `<img src="${BASE_URL}/lovie-logo.png" width="36" height="36" alt="Lovie" style="display:inline-block;vertical-align:middle;margin-right:10px;" />`;
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
