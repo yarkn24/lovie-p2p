@@ -5,112 +5,49 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function RequestShare() {
-  const params = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [request, setRequest] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<'loading' | 'anon' | 'redirect' | 'error'>('loading');
   const [error, setError] = useState('');
 
-  const id = params.id as string;
-
   useEffect(() => {
-    if (!id) return;
-
-    const loadData = async () => {
-      try {
-        // Check if user is logged in
-        const userRes = await fetch('/api/auth/user', { credentials: 'include' });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setUser(userData.user);
-        }
-
-        // Try to load request
-        const reqRes = await fetch(`/api/payment-requests/${id}`, { credentials: 'include' });
-        if (reqRes.ok) {
-          const reqData = await reqRes.json();
-          setRequest(reqData);
-        } else if (reqRes.status === 403) {
-          setError('This payment request is not for you.');
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    (async () => {
+      const userRes = await fetch('/api/auth/user', { credentials: 'include' });
+      if (userRes.ok) {
+        router.replace(`/requests/${id}`);
+        setState('redirect');
+        return;
       }
-    };
+      setState('anon');
+    })().catch(() => {
+      setError('Could not load this request.');
+      setState('error');
+    });
+  }, [id, router]);
 
-    loadData();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">Loading...</div>
-      </div>
-    );
+  if (state === 'loading' || state === 'redirect') {
+    return <div className="min-h-screen grid place-items-center text-sm text-[var(--color-muted)]">Loading…</div>;
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md text-center">
-          <h1 className="text-2xl font-bold mb-4">Payment Request</h1>
-          <p className="text-gray-600 mb-6">
-            A payment request was sent to you. Log in to see the details.
+  return (
+    <div className="min-h-screen grid place-items-center px-6">
+      <div className="card w-full max-w-md p-8 text-center">
+        <div className="w-12 h-12 rounded-full bg-[var(--color-brand)] grid place-items-center mx-auto mb-4">
+          <span className="text-white font-bold">L</span>
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">You&apos;ve got a payment request</h1>
+        {error ? (
+          <p className="text-sm text-red-600 mt-2">{error}</p>
+        ) : (
+          <p className="text-sm text-[var(--color-muted)] mt-2">
+            Sign in to view the details and pay, decline, or schedule.
           </p>
-          <Link
-            href="/auth/login"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Login
-          </Link>
-          <p className="text-gray-600 text-sm mt-4">
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-blue-600 hover:text-blue-700">
-              Sign up here
-            </Link>
-          </p>
+        )}
+        <div className="flex gap-3 mt-6 justify-center">
+          <Link href="/auth/login" className="btn-brand">Sign in</Link>
+          <Link href="/auth/signup" className="btn-ghost">Create account</Link>
         </div>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md text-center">
-          <h1 className="text-2xl font-bold mb-4">Oops!</h1>
-          <p className="text-red-600 mb-6">{error}</p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!request) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md text-center">
-          <h1 className="text-2xl font-bold mb-4">Not Found</h1>
-          <p className="text-gray-600 mb-6">This payment request doesn't exist.</p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to detail page if we have the request and user
-  return null;
+    </div>
+  );
 }

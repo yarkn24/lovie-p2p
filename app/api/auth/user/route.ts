@@ -1,13 +1,20 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { unauthorized, notFound } from '@/lib/errors';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
-  return NextResponse.json({ user });
+  const { data: profile } = await supabase
+    .from('users')
+    .select('id, email, first_name, last_name, balance')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile) return notFound('USER_NOT_FOUND', 'Profile not found.');
+
+  return NextResponse.json(profile);
 }

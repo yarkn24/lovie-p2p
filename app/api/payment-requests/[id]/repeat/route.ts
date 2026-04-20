@@ -35,10 +35,10 @@ export async function POST(
     );
   }
 
-  if (paymentReq.status !== 3) {
+  if (paymentReq.status !== 3 && paymentReq.status !== 7) {
     return conflict(
       'INVALID_STATUS',
-      `Only declined requests can be repeated (current status: ${paymentReq.status}).`
+      `Only declined or failed requests can be repeated (current status: ${paymentReq.status}).`
     );
   }
 

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   badRequest,
@@ -125,8 +126,37 @@ export async function GET(request: NextRequest) {
   }
 
   const { data, error } = await query;
-
   if (error) return internalError(error.message);
+  const rows = data ?? [];
 
-  return NextResponse.json(data || []);
+  const ids = Array.from(
+    new Set(
+      rows.flatMap((r) =>
+        [r.sender_id, r.recipient_id].filter((x): x is string => Boolean(x))
+      )
+    )
+  );
+
+  let profiles: Record<string, { first_name: string; last_name: string; email: string }> = {};
+  if (ids.length > 0) {
+    const admin = createAdminClient();
+    const { data: users } = await admin
+      .from('users')
+      .select('id, first_name, last_name, email')
+      .in('id', ids);
+    profiles = Object.fromEntries(
+      (users ?? []).map((u) => [
+        u.id,
+        { first_name: u.first_name, last_name: u.last_name, email: u.email },
+      ])
+    );
+  }
+
+  const enriched = rows.map((r) => ({
+    ...r,
+    sender: r.sender_id ? profiles[r.sender_id] ?? null : null,
+    recipient: r.recipient_id ? profiles[r.recipient_id] ?? null : null,
+  }));
+
+  return NextResponse.json(enriched);
 }

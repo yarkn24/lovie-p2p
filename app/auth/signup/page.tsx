@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 
 export default function SignupPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,21 +15,18 @@ export default function SignupPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/auth/login');
-      } else {
-        setUser(user);
-      }
-    };
-    getUser();
+    (async () => {
+      const {
+        data: { user: u },
+      } = await supabase.auth.getUser();
+      if (!u) router.push('/auth/login');
+      else setUser(u);
+    })();
   }, [supabase, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-
     setLoading(true);
     setError('');
 
@@ -36,63 +34,63 @@ export default function SignupPage() {
       .from('users')
       .upsert({
         id: user.id,
-        email: user.email,
+        email: user.email!,
         first_name: firstName,
         last_name: lastName,
-        balance: 1000000, // $10,000 in cents
+        balance: 1000000,
       })
       .select();
 
     if (err) {
       setError(err.message);
+      setLoading(false);
     } else {
       router.push('/');
+      router.refresh();
     }
-    setLoading(false);
   };
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Complete Profile</h1>
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="w-full max-w-md card p-8">
+        <h1 className="text-2xl font-semibold tracking-tight">Complete your profile</h1>
+        <p className="text-sm text-[var(--color-muted)] mt-1">
+          Signed in as <span className="font-medium">{user.email}</span>
+        </p>
 
-        <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="mt-6 space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">First Name</label>
+            <label className="text-xs font-medium text-[var(--color-ink-3)]">First name</label>
             <input
-              type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input mt-1"
               required
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium mb-1">Last Name</label>
+            <label className="text-xs font-medium text-[var(--color-ink-3)]">Last name</label>
             <input
-              type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               disabled={loading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input mt-1"
               required
             />
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Creating...' : 'Create Account'}
+          <button disabled={loading} className="btn-brand w-full">
+            {loading ? 'Creating…' : 'Create account'}
           </button>
         </form>
 
-        {error && <p className="mt-4 text-center text-sm text-red-600">{error}</p>}
+        {error && (
+          <div className="mt-4 text-sm px-3 py-2 rounded-[var(--radius-lovie)] bg-red-50 text-red-700 border border-red-100">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-cream: #faf5f0;
+  --color-ink: #0f172a;
+  --color-ink-2: #1e293b;
+  --color-ink-3: #334155;
+  --color-muted: #64748b;
+  --color-muted-2: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-bg: #f8fafc;
+  --color-bg-2: #f1f5f9;
+  --color-brand: #0546bf;
+  --color-brand-2: #065b98;
+  --color-accent: #f97316;
+
+  --radius-lovie: 0.625rem;
+}
+
+html, body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn-primary {
+  background: var(--color-ink);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-lovie);
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-brand {
+  background: var(--color-brand);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-lovie);
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.btn-brand:hover { background: var(--color-brand-2); }
+.btn-brand:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-ghost {
+  background: white;
+  color: var(--color-ink);
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-lovie);
+  border: 1px solid var(--color-line);
+  font-weight: 500;
+}
+.btn-ghost:hover { background: var(--color-bg); }
+
+.btn-danger {
+  background: white;
+  color: #b91c1c;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--radius-lovie);
+  border: 1px solid #fecaca;
+  font-weight: 500;
+}
+.btn-danger:hover { background: #fef2f2; }
+
+.card {
+  background: white;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lovie);
+}
+
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-lovie);
+  border: 1px solid var(--color-line);
+  background: white;
+  font-size: 0.95rem;
+  outline: none;
+}
+.input:focus { border-color: var(--color-brand); box-shadow: 0 0 0 3px rgba(5,70,191,0.1); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.chip-pending { background: #fff7ed; color: #c2410c; }
+.chip-paid    { background: #ecfdf5; color: #047857; }
+.chip-declined{ background: #fef2f2; color: #b91c1c; }
+.chip-expired { background: #f1f5f9; color: #475569; }
+.chip-scheduled { background: #eff6ff; color: #1d4ed8; }
+.chip-cancelled { background: #f1f5f9; color: #475569; }
+.chip-failed  { background: #fff1f2; color: #be123c; }

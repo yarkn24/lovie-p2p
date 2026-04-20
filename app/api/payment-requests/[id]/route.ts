@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { unauthorized, forbidden, notFound } from '@/lib/errors';
 
@@ -47,5 +48,23 @@ export async function GET(
     paymentReq.status = 4;
   }
 
-  return NextResponse.json(paymentReq);
+  const ids = [paymentReq.sender_id, paymentReq.recipient_id].filter(
+    (x): x is string => Boolean(x)
+  );
+  const admin = createAdminClient();
+  const { data: users } = await admin
+    .from('users')
+    .select('id, first_name, last_name, email')
+    .in('id', ids);
+  const profileMap = Object.fromEntries(
+    (users ?? []).map((u) => [u.id, u])
+  );
+
+  return NextResponse.json({
+    ...paymentReq,
+    sender: profileMap[paymentReq.sender_id] ?? null,
+    recipient: paymentReq.recipient_id
+      ? profileMap[paymentReq.recipient_id] ?? null
+      : null,
+  });
 }
