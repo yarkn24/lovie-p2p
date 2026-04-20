@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET() {
@@ -40,47 +41,34 @@ export async function POST(request: NextRequest) {
   }
 
   const delta = action === 'add' ? amountInCents : -amountInCents;
+  const admin = createAdminClient();
 
-  // Try adjust_balance RPC (atomic, migration 0004) first; fall back to
-  // optimistic-lock loop so code deploys safely before migration is applied.
-  const { data: rpcData, error: rpcError } = await supabase.rpc('adjust_balance', {
-    p_user_id: user.id,
-    p_delta: delta,
-  });
+  const { data: current } = await admin
+    .from('users')
+    .select('balance')
+    .eq('id', user.id)
+    .single();
 
-  if (!rpcError) {
-    return NextResponse.json({ balance: rpcData });
+  if (!current) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+  const newBalance = current.balance + delta;
+  if (newBalance < 0) {
+    return NextResponse.json(
+      { error: { type: 'validation_error', code: 'INSUFFICIENT_BALANCE', message: 'Balance would go negative.' } },
+      { status: 400 }
+    );
   }
 
-  // RPC not yet deployed — optimistic-lock fallback (C2+C3 partial fix)
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const { data: current } = await supabase
-      .from('users')
-      .select('balance')
-      .eq('id', user.id)
-      .single();
+  const { data: updated, error: updateErr } = await admin
+    .from('users')
+    .update({ balance: newBalance, updated_at: new Date().toISOString() })
+    .eq('id', user.id)
+    .select('balance')
+    .single();
 
-    if (!current) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-    const newBalance = current.balance + delta;
-    if (newBalance < 0) {
-      return NextResponse.json(
-        { error: { type: 'validation_error', code: 'INSUFFICIENT_BALANCE', message: 'Balance would go negative.' } },
-        { status: 400 }
-      );
-    }
-
-    const { data: updated } = await supabase
-      .from('users')
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .eq('balance', current.balance) // optimistic lock — only write if nobody else changed it
-      .select('balance')
-      .single();
-
-    if (updated) return NextResponse.json({ balance: updated.balance });
-    // Another request won the race — retry with fresh balance
+  if (updateErr || !updated) {
+    return NextResponse.json({ error: 'Failed to update balance.' }, { status: 500 });
   }
 
-  return NextResponse.json({ error: 'Concurrent update conflict — please retry' }, { status: 409 });
+  return NextResponse.json({ balance: updated.balance });
 }
