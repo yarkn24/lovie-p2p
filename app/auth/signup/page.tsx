@@ -30,19 +30,16 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
 
-    const { error: err } = await supabase
-      .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email!,
-        first_name: firstName,
-        last_name: lastName,
-        balance: 1000000,
-      })
-      .select();
+    const res = await fetch('/api/auth/complete-profile', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name: firstName, last_name: lastName }),
+    });
 
-    if (err) {
-      setError(err.message);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data?.error?.message ?? 'Could not create profile.');
       setLoading(false);
     } else {
       router.push('/');

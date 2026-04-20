@@ -35,15 +35,14 @@ export async function GET(
     );
   }
 
+  // H3: only expire if still pending/scheduled; RPC prevents overwriting a
+  // concurrently-paid status=2 row (expire_single_request checks status IN (1,5)).
   if (
     paymentReq.expired === 0 &&
+    [1, 5].includes(paymentReq.status) &&
     new Date(paymentReq.expires_at) < new Date()
   ) {
-    await supabase
-      .from('payment_requests')
-      .update({ expired: 1, status: 4, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
+    await supabase.rpc('expire_single_request', { p_request_id: id });
     paymentReq.expired = 1;
     paymentReq.status = 4;
   }

@@ -70,6 +70,14 @@ export async function POST(
     return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
+  if (scheduledDate <= new Date()) {
+    return badRequest(
+      'INVALID_SCHEDULE_DATE',
+      'scheduled_payment_date must be in the future.',
+      [{ field: 'scheduled_payment_date', issue: 'must be in the future' }]
+    );
+  }
+
   if (scheduledDate > new Date(paymentReq.expires_at)) {
     return badRequest(
       'INVALID_SCHEDULE_DATE',

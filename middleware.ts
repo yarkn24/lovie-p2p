@@ -1,6 +1,16 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
+// H9: whitelist auth paths; protect every other page by default.
+const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback'];
+
+function isPublic(pathname: string): boolean {
+  if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true;
+  // Shareable request links work without login
+  if (/^\/requests\/[^/]+\/share$/.test(pathname)) return true;
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next();
 
@@ -20,16 +30,13 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+  const { pathname } = request.nextUrl;
 
-  if (!user && request.nextUrl.pathname === '/') {
+  if (!user && !isPublic(pathname)) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (!user && request.nextUrl.pathname.startsWith('/requests')) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
-
-  if (user && (request.nextUrl.pathname === '/auth/login' || request.nextUrl.pathname === '/auth/signup')) {
+  if (user && (pathname === '/auth/login' || pathname === '/auth/signup')) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
@@ -37,5 +44,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/requests/:path*', '/auth/:path*'],
+  // Run on all routes except Next.js internals and static assets
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };

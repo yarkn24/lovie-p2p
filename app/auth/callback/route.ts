@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') || '/signup';
+  const next = searchParams.get('next') || '/auth/signup';
 
   if (!code) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
