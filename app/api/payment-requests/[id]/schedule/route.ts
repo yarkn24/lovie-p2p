@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendPaymentScheduledEmail } from '@/lib/email';
 import {
   unauthorized,
   forbidden,
@@ -103,6 +104,20 @@ export async function POST(
     .single();
 
   if (updateError) return internalError(updateError.message);
+
+  ;(async () => {
+    const { data: sender } = await supabase.from('users').select('email').eq('id', paymentReq.sender_id).single();
+    const { data: payer } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    if (sender?.email && payer) {
+      await sendPaymentScheduledEmail({
+        senderEmail: sender.email,
+        payerName: `${payer.first_name} ${payer.last_name}`,
+        amount: paymentReq.amount,
+        scheduledDate: scheduledDate.toISOString(),
+        requestId: id,
+      });
+    }
+  })().catch(() => {});
 
   return NextResponse.json(updated);
 }

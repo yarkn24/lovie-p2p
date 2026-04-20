@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendRequestDeclinedEmail } from '@/lib/email';
 import {
   unauthorized,
   forbidden,
@@ -54,6 +55,19 @@ export async function POST(
     .single();
 
   if (updateError) return internalError(updateError.message);
+
+  ;(async () => {
+    const { data: sender } = await supabase.from('users').select('email').eq('id', paymentReq.sender_id).single();
+    const { data: decliner } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    if (sender?.email && decliner) {
+      await sendRequestDeclinedEmail({
+        senderEmail: sender.email,
+        recipientName: `${decliner.first_name} ${decliner.last_name}`,
+        amount: paymentReq.amount,
+        requestId: id,
+      });
+    }
+  })().catch(() => {});
 
   return NextResponse.json(updated);
 }

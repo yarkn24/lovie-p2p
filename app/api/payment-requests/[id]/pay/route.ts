@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendPaymentReceivedEmail } from '@/lib/email';
 import {
   unauthorized,
   forbidden,
@@ -60,6 +61,20 @@ export async function POST(
     p_to_user_id: paymentReq.sender_id,
     p_amount: paymentReq.amount,
   });
+
+  // Notify sender that they got paid (fire-and-forget)
+  ;(async () => {
+    const { data: sender } = await supabase.from('users').select('email, first_name, last_name').eq('id', paymentReq.sender_id).single();
+    const { data: payer } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    if (sender?.email && payer) {
+      await sendPaymentReceivedEmail({
+        senderEmail: sender.email,
+        payerName: `${payer.first_name} ${payer.last_name}`,
+        amount: paymentReq.amount,
+        requestId: id,
+      });
+    }
+  })().catch(() => {});
 
   if (execError) {
     const msg = execError.message;

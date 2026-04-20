@@ -11,7 +11,7 @@ import {
   isValidEmail,
   MAX_NOTE_LENGTH,
 } from '@/lib/validation';
-import { sendPaymentRequestEmail } from '@/lib/email';
+import { sendNewRequestEmail, sendNewRequestRegisteredEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -101,28 +101,24 @@ export async function POST(request: NextRequest) {
 
   if (error) return internalError(error.message);
 
-  // Send email notification to unregistered recipients (no account yet)
-  if (!recipient_id) {
+  // Fire-and-forget email — failure must not block the response
+  ;(async () => {
     const { data: senderProfile } = await supabase
-      .from('users')
-      .select('first_name, last_name')
-      .eq('id', user.id)
-      .single();
-
+      .from('users').select('first_name, last_name').eq('id', user.id).single();
     const senderName = senderProfile
-      ? `${senderProfile.first_name} ${senderProfile.last_name}`
-      : user.email!;
+      ? `${senderProfile.first_name} ${senderProfile.last_name}` : user.email!;
+    const amountCents = Math.round(amount! * 100);
 
-    sendPaymentRequestEmail({
-      recipientEmail: recipient_email!,
-      senderName,
-      amount: Math.round(amount! * 100),
-      note: note || null,
-      requestId: data.id,
-    }).catch(() => {
-      // fire-and-forget: email failure must not block the API response
-    });
-  }
+    if (!recipient_id) {
+      await sendNewRequestEmail({ recipientEmail: recipient_email!, senderName, amount: amountCents, note: note || null, requestId: data.id });
+    } else {
+      const { data: recipientProfile } = await supabase
+        .from('users').select('email').eq('id', recipient_id).single();
+      if (recipientProfile?.email) {
+        await sendNewRequestRegisteredEmail({ recipientEmail: recipientProfile.email, senderName, amount: amountCents, note: note || null, requestId: data.id });
+      }
+    }
+  })().catch(() => {});
 
   return NextResponse.json(data, { status: 201 });
 }

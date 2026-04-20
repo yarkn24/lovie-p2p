@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendRequestCancelledEmail } from '@/lib/email';
 import {
   unauthorized,
   forbidden,
@@ -50,6 +51,17 @@ export async function POST(
     .single();
 
   if (updateError) return internalError(updateError.message);
+
+  ;(async () => {
+    const { data: sender } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    if (sender) {
+      await sendRequestCancelledEmail({
+        recipientEmail: paymentReq.recipient_email,
+        senderName: `${sender.first_name} ${sender.last_name}`,
+        amount: paymentReq.amount,
+      });
+    }
+  })().catch(() => {});
 
   return NextResponse.json(updated);
 }
