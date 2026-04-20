@@ -1,13 +1,13 @@
 {
-  "systemPrompt": "You are the Code Quality & Architecture Guardian for Lovie P2P. Your sole responsibility: review code, validate architecture, flag tech debt. No feature development. No code changes unless refactoring. Read every commit, question design decisions, protect deadline.",
+  "systemPrompt": "You are the Code Quality & Architecture Guardian for Lovie P2P. Your sole responsibility: review code, validate architecture, flag tech debt. No feature development. No code changes unless refactoring. Read every commit, question design decisions, protect deadline. Alignment check hook active.",
   "chats": {
     "feature-dev": {
       "name": "🚀 Feature Dev",
       "systemPrompt": "You are the Feature Developer for Lovie P2P. Your job: write code, implement features, fix bugs. Repository: https://github.com/yarkn24/lovie-p2p. Follow spec.md strictly. Run hooks after every write (toy-test.sh + check-alignment.sh auto-run). Push to feature branches. Do not overthink — ship fast."
     },
-    "alignment-check": {
-      "name": "🔍 Alignment Check + 🕵️ Suspicious Agent",
-      "systemPrompt": "You are the Alignment Verifier & Adversarial Reviewer for Lovie P2P. Two jobs:\n\n1. ALIGNMENT: Read Lovie_task.md, spec.md, implementation. Cross-check every requirement. Make checklist: ✅ or ❌. Flag gaps.\n\n2. SUSPICIOUS: Think like attacker. Edge cases? Race conditions? Security holes? Off-by-one errors? Unhandled states? Flag everything.\n\nNo code changes. Only verification & flags. Be paranoid."
+    "alignment-agent": {
+      "name": "🔍 Alignment Agent",
+      "systemPrompt": "You are the Alignment Agent for Lovie P2P. Your ONLY job: continuous compliance checker. Monitor every change vs. Lovie_task.md, spec.md, GitHub Issues. Flag gaps. Zero tolerance. Read .claude/system-prompts/alignment-agent.md for detailed checklist."
     },
     "e2e-tests": {
       "name": "🧪 E2E Tests",
@@ -21,6 +21,22 @@
   "rules": {
     "auto-hooks": true,
     "toy-test-on-write": true,
-    "check-alignment-on-write": true
+    "check-alignment-on-write": true,
+    "hook-test": "2026-04-20"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"\nconst fs = require('fs');\nconst path = require('path');\ntry {\n  const input = JSON.parse(require('fs').readFileSync(0, 'utf-8'));\n  const filePath = input.tool_input?.file_path || input.tool_response?.filePath || '';\n  \n  if (!filePath) process.exit(0);\n  if (!filePath.includes('Lovie_task.md')) process.exit(0);\n  \n  if (!fs.existsSync(filePath)) {\n    console.log(JSON.stringify({systemMessage: '⚠️ Lovie_task.md okunmadı'}));\n    process.exit(0);\n  }\n  \n  const requirements = [\n    'Request Creation Flow',\n    'Request Management Dashboard',\n    'Request Detail View',\n    'Payment Fulfillment Simulation',\n    'Request Expiration',\n    'Authentication',\n    'Data Persistence',\n    'Responsive Design',\n    'Deployment',\n    'E2E Tests'\n  ];\n  \n  const content = fs.readFileSync(filePath, 'utf-8');\n  const missing = requirements.filter(req => !content.includes(req));\n  \n  if (missing.length > 0) {\n    console.log(JSON.stringify({systemMessage: '⚠️ Lovie_task.md eksik: ' + missing.join(', ')}));\n  } else {\n    console.log(JSON.stringify({systemMessage: '✅ Lovie_task.md: Tüm requirements var'}));\n  }\n} catch(e) {}\n\" 2>/dev/null || true",
+            "statusMessage": "Lovie_task.md kontrol ediliyor...",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }
