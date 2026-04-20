@@ -24,14 +24,16 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setMessage({ kind: 'err', text: error.message });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setMessage({ kind: 'err', text: error.message });
+        return;
+      }
+      window.location.href = '/';
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push('/');
-    router.refresh();
   };
 
   const handleMagic = async () => {
@@ -53,17 +55,22 @@ export default function LoginPage() {
   const loginAsDemo = async (demoEmail: string) => {
     setLoading(true);
     setMessage(null);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: demoEmail,
-      password: DEMO_PASSWORD,
-    });
-    if (error) {
-      setMessage({ kind: 'err', text: error.message });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: DEMO_PASSWORD,
+      });
+      if (error) {
+        setMessage({
+          kind: 'err',
+          text: `${error.message}. Try "Or email me a magic link" with ${demoEmail}.`,
+        });
+        return;
+      }
+      window.location.href = '/';
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push('/');
-    router.refresh();
   };
 
   return (
