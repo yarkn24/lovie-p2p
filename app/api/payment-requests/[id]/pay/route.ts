@@ -61,7 +61,16 @@ export async function POST(
     p_amount: paymentReq.amount,
   });
 
-  if (execError) return internalError(execError.message);
+  if (execError) {
+    const msg = execError.message;
+    if (msg.includes('INSUFFICIENT_BALANCE'))
+      return badRequest('INSUFFICIENT_BALANCE', 'Your balance is insufficient to complete this payment.');
+    if (msg.includes('INVALID_STATUS'))
+      return conflict('INVALID_STATUS', 'Request is no longer pending.');
+    if (msg.includes('REQUEST_NOT_FOUND'))
+      return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
+    return internalError(msg);
+  }
 
   const { data: updated } = await supabase
     .from('payment_requests')
