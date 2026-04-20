@@ -1,9 +1,9 @@
 -- ============================================================
--- Security fixes migration
+-- Security fixes migration (idempotent)
 -- Addresses C1-C6, H3-H5, H9-H10, M4, M5 from audit report
 -- ============================================================
 
--- M4: Fix TIMESTAMP → TIMESTAMPTZ to avoid DST bugs
+-- M4: TIMESTAMP → TIMESTAMPTZ (no-op if already TIMESTAMPTZ)
 ALTER TABLE users
   ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC',
   ALTER COLUMN updated_at TYPE TIMESTAMPTZ USING updated_at AT TIME ZONE 'UTC';
@@ -18,16 +18,17 @@ ALTER TABLE payment_transactions
   ALTER COLUMN paid_at    TYPE TIMESTAMPTZ USING paid_at AT TIME ZONE 'UTC',
   ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC';
 
--- C3 / M5: Add constraints so bad data can never be persisted
-ALTER TABLE users
-  ADD CONSTRAINT balance_non_negative CHECK (balance >= 0);
+-- C3 / M5: Add constraints (idempotent via exception catch)
+DO $$ BEGIN
+  ALTER TABLE users ADD CONSTRAINT balance_non_negative CHECK (balance >= 0);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-ALTER TABLE payment_requests
-  ADD CONSTRAINT status_valid CHECK (status IN (1, 2, 3, 4, 5, 6, 7));
+DO $$ BEGIN
+  ALTER TABLE payment_requests ADD CONSTRAINT status_valid CHECK (status IN (1, 2, 3, 4, 5, 6, 7));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ============================================================
--- C2+C3: Atomic balance adjustment (replaces SELECT + UPDATE)
--- Returns new balance; raises if result would go negative.
+-- C2+C3: Atomic balance adjustment
 -- ============================================================
 CREATE OR REPLACE FUNCTION adjust_balance(p_user_id UUID, p_delta INTEGER)
 RETURNS INTEGER AS $$
@@ -49,8 +50,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
 -- C4+C6: Atomic execute_payment with row-level locking
--- Acquires FOR UPDATE lock → re-checks status → checks balance
--- All inside one implicit transaction; any failure rolls back.
 -- ============================================================
 CREATE OR REPLACE FUNCTION execute_payment(
   p_request_id   UUID,
@@ -62,22 +61,17 @@ DECLARE
   v_status  INTEGER;
   v_balance INTEGER;
 BEGIN
-  -- Lock request row to block concurrent pay attempts
   SELECT status INTO v_status
-    FROM payment_requests
-    WHERE id = p_request_id
-    FOR UPDATE;
+    FROM payment_requests WHERE id = p_request_id FOR UPDATE;
 
   IF v_status IS NULL THEN
     RAISE EXCEPTION 'REQUEST_NOT_FOUND: payment request % does not exist', p_request_id;
   END IF;
 
-  -- Re-check status under lock (prevents double-pay)
   IF v_status != 1 THEN
     RAISE EXCEPTION 'INVALID_STATUS: expected 1 (pending), got %', v_status;
   END IF;
 
-  -- Lock payer row and verify balance
   SELECT balance INTO v_balance
     FROM users WHERE id = p_from_user_id FOR UPDATE;
 
@@ -85,15 +79,13 @@ BEGIN
     RAISE EXCEPTION 'INSUFFICIENT_BALANCE: balance % < amount %', v_balance, p_amount;
   END IF;
 
-  -- Deduct from payer
   UPDATE users SET balance = balance - p_amount WHERE id = p_from_user_id;
-  -- Credit receiver
   UPDATE users SET balance = balance + p_amount WHERE id = p_to_user_id;
-  -- Audit trail
+
   INSERT INTO payment_transactions
     (request_id, from_user_id, to_user_id, amount, transaction_type, status, paid_at)
     VALUES (p_request_id, p_from_user_id, p_to_user_id, p_amount, 'manual_pay', 'success', NOW());
-  -- Mark paid and clear any previous failure reason
+
   UPDATE payment_requests
     SET status = 2, failure_reason = NULL, updated_at = NOW()
     WHERE id = p_request_id;
@@ -102,7 +94,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
 -- H5: execute_scheduled_payments with SKIP LOCKED
--- Prevents concurrent cron runs from double-executing same row.
 -- ============================================================
 CREATE OR REPLACE FUNCTION execute_scheduled_payments()
 RETURNS void AS $$
@@ -115,7 +106,6 @@ BEGIN
       WHERE status = 5 AND scheduled_payment_date <= NOW()
       FOR UPDATE SKIP LOCKED
   LOOP
-    -- Recipient pays sender (recipient received the request and agreed to pay)
     SELECT balance INTO v_payer_balance
       FROM users WHERE id = v_request.recipient_id FOR UPDATE;
 
@@ -141,10 +131,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- H3: expire_single_request RPC
--- Called by GET /api/payment-requests/[id] to safely expire
--- without risking overwriting a concurrently-paid request.
--- Only transitions from status 1 or 5 → 4 (never from 2).
+-- H3: expire_single_request — safe single-row expiry
 -- ============================================================
 CREATE OR REPLACE FUNCTION expire_single_request(p_request_id UUID)
 RETURNS void AS $$
@@ -159,9 +146,11 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- Fix repeat_payment_request to also allow failed (status=7)
+-- Fix repeat_payment_request to allow failed (status=7)
+-- DROP first to avoid "cannot change return type" error
 -- ============================================================
-CREATE OR REPLACE FUNCTION repeat_payment_request(p_request_id UUID)
+DROP FUNCTION IF EXISTS repeat_payment_request(UUID);
+CREATE FUNCTION repeat_payment_request(p_request_id UUID)
 RETURNS UUID AS $$
 DECLARE
   v_req payment_requests%ROWTYPE;
@@ -190,37 +179,33 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- C5: RLS UPDATE policies for payment_requests
--- All critical status transitions (status=2) go through
--- SECURITY DEFINER RPCs which bypass RLS.
--- Direct client updates are restricted to safe transitions only.
+-- C5: RLS UPDATE policies for payment_requests (idempotent)
 -- ============================================================
+DROP POLICY IF EXISTS "Recipients can decline" ON payment_requests;
+DROP POLICY IF EXISTS "Recipients can schedule" ON payment_requests;
+DROP POLICY IF EXISTS "Senders can cancel" ON payment_requests;
+DROP POLICY IF EXISTS "Participants can expire" ON payment_requests;
+DROP POLICY IF EXISTS "No direct delete" ON payment_requests;
 
--- Recipients can decline a pending request
 CREATE POLICY "Recipients can decline" ON payment_requests
   FOR UPDATE
   USING (auth.uid() = recipient_id OR auth.email() = recipient_email)
   WITH CHECK (
-    status = 3 AND
-    (auth.uid() = recipient_id OR auth.email() = recipient_email)
+    status = 3 AND (auth.uid() = recipient_id OR auth.email() = recipient_email)
   );
 
--- Recipients can schedule a pending/failed request
 CREATE POLICY "Recipients can schedule" ON payment_requests
   FOR UPDATE
   USING (auth.uid() = recipient_id OR auth.email() = recipient_email)
   WITH CHECK (
-    status = 5 AND
-    (auth.uid() = recipient_id OR auth.email() = recipient_email)
+    status = 5 AND (auth.uid() = recipient_id OR auth.email() = recipient_email)
   );
 
--- Senders can cancel their own pending request
 CREATE POLICY "Senders can cancel" ON payment_requests
   FOR UPDATE
   USING (auth.uid() = sender_id)
   WITH CHECK (status = 6 AND auth.uid() = sender_id);
 
--- Participants can trigger expiry (status=4) on their own requests
 CREATE POLICY "Participants can expire" ON payment_requests
   FOR UPDATE
   USING (
@@ -230,6 +215,5 @@ CREATE POLICY "Participants can expire" ON payment_requests
   )
   WITH CHECK (status = 4 AND expired = 1);
 
--- No direct DELETE allowed (cancellation goes through status=6)
 CREATE POLICY "No direct delete" ON payment_requests
   FOR DELETE USING (false);
