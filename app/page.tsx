@@ -49,7 +49,7 @@ export default function Dashboard() {
   const [me, setMe] = useState<Me | null>(null);
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [tab, setTab] = useState<'incoming' | 'outgoing'>('incoming');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'paid' | 'other'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'paid' | 'declined' | 'expired' | 'cancelled' | 'failed'>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [adjustAmount, setAdjustAmount] = useState('');
@@ -100,7 +100,10 @@ export default function Dashboard() {
       .filter((r) => {
         if (filter === 'pending') return r.status === 1 || r.status === 5;
         if (filter === 'paid') return r.status === 2;
-        if (filter === 'other') return ![1, 2, 5].includes(r.status);
+        if (filter === 'declined') return r.status === 3;
+        if (filter === 'expired') return r.status === 4;
+        if (filter === 'cancelled') return r.status === 6;
+        if (filter === 'failed') return r.status === 7;
         return true;
       })
       .filter((r) => {
@@ -210,7 +213,10 @@ export default function Dashboard() {
                 <option value="all">All statuses</option>
                 <option value="pending">Pending & Scheduled</option>
                 <option value="paid">Paid</option>
-                <option value="other">Declined / Expired / Cancelled</option>
+                <option value="declined">Declined</option>
+                <option value="expired">Expired</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="failed">Failed</option>
               </select>
               <input
                 placeholder="Search name or note…"
