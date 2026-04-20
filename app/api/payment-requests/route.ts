@@ -11,6 +11,7 @@ import {
   isValidEmail,
   MAX_NOTE_LENGTH,
 } from '@/lib/validation';
+import { sendPaymentRequestEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -99,6 +100,29 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return internalError(error.message);
+
+  // Send email notification to unregistered recipients (no account yet)
+  if (!recipient_id) {
+    const { data: senderProfile } = await supabase
+      .from('users')
+      .select('first_name, last_name')
+      .eq('id', user.id)
+      .single();
+
+    const senderName = senderProfile
+      ? `${senderProfile.first_name} ${senderProfile.last_name}`
+      : user.email!;
+
+    sendPaymentRequestEmail({
+      recipientEmail: recipient_email!,
+      senderName,
+      amount: Math.round(amount! * 100),
+      note: note || null,
+      requestId: data.id,
+    }).catch(() => {
+      // fire-and-forget: email failure must not block the API response
+    });
+  }
 
   return NextResponse.json(data, { status: 201 });
 }
