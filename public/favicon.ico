@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/lovie-logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Lovie.co - Agent-Native Banking</title>
+    <meta
+      name="description"
+      content="The agent-native bank where AI agents execute founders' plain-English financial policies — bill pay, cards, payroll, expenses, and payments."
+    />
+    <meta property="og:title" content="Lovie.co - Agent-Native Banking" />
+    <meta
+      property="og:description"
+      content="The agent-native bank where AI agents execute founders' plain-English financial policies — bill pay, cards, payroll, expenses, and payments."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/lovie-logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Lovie.co - Agent-Native Banking" />
+    <meta
+      name="twitter:description"
+      content="The agent-native bank where AI agents execute founders' plain-English financial policies — bill pay, cards, payroll, expenses, and payments."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #prerender {
+        display: flex;
+        min-height: 100vh;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        padding: 2rem 1rem;
+      }
+      #prerender .card {
+        background: #e4eaf4;
+        border-radius: 28px;
+        width: 100%;
+        max-width: 1200px;
+        min-height: 680px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 4rem 2rem 6rem;
+      }
+      #prerender .logo-box {
+        width: 96px;
+        height: 96px;
+        background: #fff;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+          0 2px 8px rgba(0, 0, 0, 0.04);
+        margin-bottom: 1.25rem;
+      }
+      #prerender .logo-box img {
+        width: 56px;
+        height: 56px;
+        object-fit: contain;
+      }
+      #prerender .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid #c8d4e8;
+        border-radius: 9999px;
+        padding: 0.375rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #334155;
+        margin-bottom: 1.25rem;
+      }
+      #prerender .badge img {
+        width: 16px;
+        height: 16px;
+      }
+      #prerender h1 {
+        font-size: 3.2rem;
+        line-height: 1.12;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #0f172a;
+        text-align: center;
+        max-width: 720px;
+        margin: 0;
+      }
+      #prerender h1 span {
+        background: linear-gradient(to right, #0546bf, #1fa0fd, #00e0b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      #prerender .sub {
+        margin-top: 1.25rem;
+        font-size: 1.08rem;
+        line-height: 1.65;
+        font-weight: 300;
+        color: #64748b;
+        text-align: center;
+        max-width: 600px;
+      }
+      #prerender .corner-bl {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 180px;
+        height: 180px;
+        background: #cdd6e8;
+        border-top-right-radius: 180px;
+      }
+      #prerender .corner-br {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 180px;
+        height: 180px;
+        background: #cdd6e8;
+        border-top-left-radius: 180px;
+      }
+      @media (max-width: 640px) {
+        #prerender h1 {
+          font-size: 2rem;
+        }
+        #prerender .sub {
+          font-size: 0.95rem;
+        }
+        #prerender .card {
+          min-height: 500px;
+          padding: 3rem 1.5rem 5rem;
+        }
+        #prerender .corner-bl,
+        #prerender .corner-br {
+          width: 100px;
+          height: 100px;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-CMORbStQ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DRwdi2v6.css">
+  </head>
+  <body>
+    <div id="prerender">
+      <div class="card">
+        <div class="logo-box">
+          <img src="/lovie-logo.png" alt="Lovie" />
+        </div>
+        <div class="badge">
+          <img src="/lovie-logo.png" alt="" />
+          Agent-Native Banking
+        </div>
+        <h1>
+          Beyond Traditional Banking:<br />
+          <span>AI-First Banking for AI-First Companies.</span>
+        </h1>
+        <p class="sub">
+          The agent-native bank where AI agents execute founders' plain-English
+          financial policies — bill pay, cards, payroll, expenses, and payments.
+        </p>
+        <div class="corner-bl"></div>
+        <div class="corner-br"></div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var check = setInterval(function () {
+          if (document.getElementById("root").children.length > 0) {
+            var el = document.getElementById("prerender");
+            if (el) el.style.display = "none";
+            clearInterval(check);
+          }
+        }, 50);
+      });
+    </script>
+  </body>
+</html>

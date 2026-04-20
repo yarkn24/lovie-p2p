@@ -2,8 +2,9 @@ import { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata = {
-  title: 'Lovie — P2P Payments',
-  description: 'Agent-native banking. Request and send money, peer-to-peer.',
+  title: 'Lovie.co — Agent-Native Banking',
+  description: 'The agent-native bank where AI agents execute founders\' plain-English financial policies.',
+  icons: { icon: '/favicon.ico' },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
