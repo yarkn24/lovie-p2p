@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   badRequest,
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest) {
 
   let profiles: Record<string, { first_name: string; last_name: string; email: string }> = {};
   if (ids.length > 0) {
-    const { data: users } = await supabase
+    const { data: users } = await createAdminClient()
       .from('users')
       .select('id, first_name, last_name, email')
       .in('id', ids);
