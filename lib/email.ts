@@ -4,12 +4,30 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://lovie-p2p-gules.vercel.app';
 const FROM = 'Lovie <onboarding@resend.dev>';
 
+// ─── Lovie brand palette ──────────────────────────────────────────────────────
+// Dark navy: #0a0f1e  |  Brand blue: #2563eb  |  Cyan: #06b6d4
+// Gradient:  linear-gradient(135deg, #2563eb, #06b6d4)
+
 const fmtUSD = (c: number) =>
   (c / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
+// Lovie logo — simplified SVG of the overlapping-circles mark
+const LOGO_SVG = `
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-right:8px;">
+  <circle cx="12" cy="12" r="8" stroke="url(#g)" stroke-width="2.2" fill="none"/>
+  <circle cx="20" cy="12" r="8" stroke="url(#g)" stroke-width="2.2" fill="none"/>
+  <circle cx="16" cy="19" r="8" stroke="url(#g)" stroke-width="2.2" fill="none"/>
+  <defs>
+    <linearGradient id="g" x1="8" y1="4" x2="24" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+</svg>`;
+
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
-function shell(accentColor: string, icon: string, title: string, body: string) {
+function shell(statusColor: string, statusLabel: string, title: string, body: string) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,77 +35,87 @@ function shell(accentColor: string, icon: string, title: string, body: string) {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${title}</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;">
-    <tr><td align="center">
-      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+  <tr><td align="center">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;">
 
-        <!-- Logo -->
-        <tr><td style="padding-bottom:24px;">
-          <span style="font-size:18px;font-weight:700;color:#18181b;letter-spacing:-0.5px;">lovie</span>
-        </td></tr>
-
-        <!-- Card -->
-        <tr><td style="background:#ffffff;border-radius:12px;border:1px solid #e4e4e7;overflow:hidden;">
-
-          <!-- Accent bar -->
-          <div style="height:4px;background:${accentColor};"></div>
-
-          <!-- Body -->
-          <div style="padding:32px 36px;">
-            <!-- Icon + heading -->
-            <p style="margin:0 0 4px;font-size:28px;">${icon}</p>
-            <h1 style="margin:8px 0 0;font-size:20px;font-weight:600;color:#18181b;letter-spacing:-0.3px;">${title}</h1>
-
-            ${body}
-          </div>
-
-          <!-- Footer rule -->
-          <div style="height:1px;background:#f4f4f5;margin:0 36px;"></div>
-          <div style="padding:20px 36px;background:#fafafa;">
-            <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-              You're receiving this because you have a Lovie account.
-              Questions? <a href="mailto:support@lovie.co" style="color:#a1a1aa;">support@lovie.co</a>
-            </p>
-          </div>
-        </td></tr>
-
+    <!-- Header -->
+    <tr><td style="background:#0a0f1e;border-radius:12px 12px 0 0;padding:22px 32px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td>
+            ${LOGO_SVG}
+            <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.4px;vertical-align:middle;">lovie</span>
+          </td>
+          <td align="right">
+            <span style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;color:${statusColor};border:1px solid ${statusColor};">
+              ${statusLabel}
+            </span>
+          </td>
+        </tr>
       </table>
     </td></tr>
+
+    <!-- Card -->
+    <tr><td style="background:#ffffff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
+      <div style="height:3px;background:linear-gradient(90deg,#2563eb,#06b6d4);"></div>
+      <div style="padding:32px 36px;">
+        <h1 style="margin:0 0 8px;font-size:21px;font-weight:700;color:#0a0f1e;letter-spacing:-0.4px;">${title}</h1>
+        ${body}
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid #f1f5f9;padding:18px 36px;background:#f8fafc;">
+        <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.6;">
+          Lovie · Agent-Native Banking ·
+          <a href="mailto:support@lovie.co" style="color:#94a3b8;text-decoration:underline;">support@lovie.co</a>
+        </p>
+      </div>
+    </td></tr>
+
   </table>
+  </td></tr>
+  </table>
+
 </body>
 </html>`;
 }
 
 function divider() {
-  return `<div style="height:1px;background:#f4f4f5;margin:24px 0;"></div>`;
+  return `<div style="height:1px;background:#f1f5f9;margin:24px 0;"></div>`;
 }
 
-function amountHero(amount: number, sub: string) {
-  return `<div style="margin:24px 0;padding:20px 24px;background:#fafafa;border-radius:8px;border:1px solid #f4f4f5;">
-    <p style="margin:0;font-size:32px;font-weight:700;color:#18181b;letter-spacing:-1px;">${fmtUSD(amount)}</p>
-    <p style="margin:4px 0 0;font-size:13px;color:#71717a;">${sub}</p>
+function amountHero(amount: number, sub: string, gradient = 'linear-gradient(135deg,#2563eb,#06b6d4)') {
+  return `<div style="margin:24px 0;padding:24px 28px;background:${gradient};border-radius:10px;">
+    <p style="margin:0;font-size:34px;font-weight:800;color:#ffffff;letter-spacing:-1.5px;">${fmtUSD(amount)}</p>
+    <p style="margin:5px 0 0;font-size:13px;color:rgba(255,255,255,0.75);font-weight:500;">${sub}</p>
   </div>`;
 }
 
 function noteQuote(note: string | null) {
   if (!note) return '';
-  return `<p style="margin:16px 0;padding:12px 16px;border-left:3px solid #e4e4e7;color:#52525b;font-size:14px;font-style:italic;background:#fafafa;border-radius:0 6px 6px 0;">"${note}"</p>`;
+  return `<p style="margin:16px 0;padding:12px 16px;border-left:3px solid #2563eb;color:#475569;font-size:14px;font-style:italic;background:#f8fafc;border-radius:0 6px 6px 0;">"${note}"</p>`;
 }
 
-function cta(href: string, label: string, color = '#18181b') {
-  return `<a href="${href}" style="display:inline-block;margin-top:24px;padding:12px 24px;background:${color};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:7px;letter-spacing:0.1px;">${label} →</a>`;
+function cta(href: string, label: string) {
+  return `<a href="${href}" style="display:inline-block;margin-top:24px;padding:13px 28px;background:linear-gradient(135deg,#2563eb,#06b6d4);color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:8px;letter-spacing:0.2px;">${label} →</a>`;
 }
 
 function metaRow(label: string, value: string) {
   return `<tr>
-    <td style="padding:8px 0;font-size:13px;color:#71717a;width:120px;vertical-align:top;">${label}</td>
-    <td style="padding:8px 0;font-size:13px;color:#18181b;font-weight:500;">${value}</td>
+    <td style="padding:7px 0;font-size:12px;color:#94a3b8;width:130px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;vertical-align:top;">${label}</td>
+    <td style="padding:7px 0;font-size:13px;color:#1e293b;font-weight:500;">${value}</td>
   </tr>`;
 }
 
 function metaTable(rows: string) {
   return `${divider()}<table cellpadding="0" cellspacing="0" style="width:100%;">${rows}</table>`;
+}
+
+function body(text: string) {
+  return `<p style="margin:12px 0 0;font-size:15px;color:#475569;line-height:1.65;">${text}</p>`;
 }
 
 async function send(to: string, subject: string, html: string) {
@@ -105,21 +133,17 @@ export async function sendNewRequestEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}/share`;
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      <strong style="color:#18181b;">${args.senderName}</strong> sent you a payment request.
-      Review it and choose to pay, decline, or schedule.
-    </p>
+  const html = shell('#06b6d4', 'Action Required', `${args.senderName} sent you a payment request`, `
+    ${body(`<strong style="color:#0a0f1e;">${args.senderName}</strong> is requesting money from you via Lovie. Create a free account to pay, decline, or schedule.`)}
     ${amountHero(args.amount, 'amount requested')}
     ${noteQuote(args.note)}
     ${metaTable(
       metaRow('From', args.senderName) +
-      metaRow('Expires', '7 days from now') +
+      metaRow('Expires', '7 days') +
       metaRow('Account', 'Sign up free on Lovie')
     )}
-    ${cta(url, 'View request')}
-  `;
-  const html = shell('#18181b', '💸', `${args.senderName} sent you a payment request`, body);
+    ${cta(url, 'View & respond to request')}
+  `);
   await send(args.recipientEmail, `${args.senderName} is requesting ${fmtUSD(args.amount)} from you`, html);
 }
 
@@ -133,10 +157,8 @@ export async function sendNewRequestRegisteredEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      <strong style="color:#18181b;">${args.senderName}</strong> sent you a payment request.
-    </p>
+  const html = shell('#06b6d4', 'Action Required', `${args.senderName} sent you a payment request`, `
+    ${body(`<strong style="color:#0a0f1e;">${args.senderName}</strong> sent you a payment request on Lovie. Pay now, decline, or schedule a future payment.`)}
     ${amountHero(args.amount, 'amount requested')}
     ${noteQuote(args.note)}
     ${metaTable(
@@ -144,8 +166,7 @@ export async function sendNewRequestRegisteredEmail(args: {
       metaRow('Expires', '7 days from now')
     )}
     ${cta(url, 'Pay, decline or schedule')}
-  `;
-  const html = shell('#18181b', '💸', `${args.senderName} sent you a payment request`, body);
+  `);
   await send(args.recipientEmail, `${args.senderName} is requesting ${fmtUSD(args.amount)} from you`, html);
 }
 
@@ -158,19 +179,15 @@ export async function sendPaymentReceivedEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      <strong style="color:#18181b;">${args.payerName}</strong> paid your request.
-      The amount has been added to your Lovie balance.
-    </p>
-    ${amountHero(args.amount, 'received')}
+  const html = shell('#10b981', 'Paid', `You received ${fmtUSD(args.amount)}`, `
+    ${body(`<strong style="color:#0a0f1e;">${args.payerName}</strong> paid your request. The amount has been added to your Lovie balance.`)}
+    ${amountHero(args.amount, 'received · balance updated', 'linear-gradient(135deg,#059669,#10b981)')}
     ${metaTable(
       metaRow('Paid by', args.payerName) +
-      metaRow('Status', 'Paid · balance updated')
+      metaRow('Status', 'Paid — balance updated')
     )}
-    ${cta(url, 'View transaction', '#16a34a')}
-  `;
-  const html = shell('#16a34a', '✅', `You received ${fmtUSD(args.amount)}`, body);
+    ${cta(url, 'View transaction')}
+  `);
   await send(args.senderEmail, `${args.payerName} paid your request — ${fmtUSD(args.amount)} received`, html);
 }
 
@@ -183,19 +200,15 @@ export async function sendRequestDeclinedEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      <strong style="color:#18181b;">${args.recipientName}</strong> declined your payment request.
-      You can send a new request from the request detail page.
-    </p>
-    ${amountHero(args.amount, 'declined')}
+  const html = shell('#f43f5e', 'Declined', `${args.recipientName} declined your request`, `
+    ${body(`<strong style="color:#0a0f1e;">${args.recipientName}</strong> declined your payment request. You can send a new request once from the request detail page.`)}
+    ${amountHero(args.amount, 'declined', 'linear-gradient(135deg,#e11d48,#f43f5e)')}
     ${metaTable(
       metaRow('Declined by', args.recipientName) +
       metaRow('Next step', 'Send a new request (one-time)')
     )}
     ${cta(url, 'View request')}
-  `;
-  const html = shell('#dc2626', '❌', `${args.recipientName} declined your request`, body);
+  `);
   await send(args.senderEmail, `${args.recipientName} declined your ${fmtUSD(args.amount)} request`, html);
 }
 
@@ -212,19 +225,16 @@ export async function sendPaymentScheduledEmail(args: {
   const dateStr = new Date(args.scheduledDate).toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      <strong style="color:#18181b;">${args.payerName}</strong> scheduled your payment.
-      You'll be notified once it's processed.
-    </p>
+  const html = shell('#2563eb', 'Scheduled', `Payment scheduled for ${fmtUSD(args.amount)}`, `
+    ${body(`<strong style="color:#0a0f1e;">${args.payerName}</strong> scheduled your payment. It will be processed automatically on the scheduled date.`)}
     ${amountHero(args.amount, 'scheduled')}
     ${metaTable(
       metaRow('Scheduled by', args.payerName) +
-      metaRow('Date', dateStr)
+      metaRow('Date', dateStr) +
+      metaRow('Status', 'Will auto-process on schedule')
     )}
-    ${cta(url, 'View request', '#2563eb')}
-  `;
-  const html = shell('#2563eb', '📅', `Payment scheduled for ${fmtUSD(args.amount)}`, body);
+    ${cta(url, 'View request')}
+  `);
   await send(args.senderEmail, `${args.payerName} scheduled your ${fmtUSD(args.amount)} request`, html);
 }
 
@@ -235,15 +245,11 @@ export async function sendRequestCancelledEmail(args: {
   senderName: string;
   amount: number;
 }) {
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      <strong style="color:#18181b;">${args.senderName}</strong> cancelled their payment request.
-      No action is needed from you.
-    </p>
-    ${amountHero(args.amount, 'cancelled')}
+  const html = shell('#64748b', 'Cancelled', `${args.senderName} cancelled their request`, `
+    ${body(`<strong style="color:#0a0f1e;">${args.senderName}</strong> cancelled their payment request. No action is needed from you.`)}
+    ${amountHero(args.amount, 'cancelled', 'linear-gradient(135deg,#475569,#64748b)')}
     ${metaTable(metaRow('Cancelled by', args.senderName))}
-  `;
-  const html = shell('#71717a', '🚫', `${args.senderName} cancelled their request`, body);
+  `);
   await send(args.recipientEmail, `${args.senderName} cancelled their ${fmtUSD(args.amount)} request`, html);
 }
 
@@ -256,18 +262,15 @@ export async function sendScheduledPaymentFailedEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
-  const body = `
-    <p style="margin:16px 0 0;font-size:15px;color:#3f3f46;line-height:1.6;">
-      Your scheduled payment to <strong style="color:#18181b;">${args.senderName}</strong> failed
-      due to insufficient balance. Please top up your balance and retry.
-    </p>
-    ${amountHero(args.amount, 'payment failed')}
+  const html = shell('#f43f5e', 'Action Required', `Scheduled payment of ${fmtUSD(args.amount)} failed`, `
+    ${body(`Your scheduled payment to <strong style="color:#0a0f1e;">${args.senderName}</strong> couldn't be processed — your Lovie balance was insufficient. Please top up and retry.`)}
+    ${amountHero(args.amount, 'payment failed', 'linear-gradient(135deg,#e11d48,#f43f5e)')}
     ${metaTable(
       metaRow('Reason', 'Insufficient balance') +
+      metaRow('To', args.senderName) +
       metaRow('Next step', 'Top up balance, then retry or reschedule')
     )}
-    ${cta(url, 'Retry payment', '#dc2626')}
-  `;
-  const html = shell('#dc2626', '⚠️', `Scheduled payment of ${fmtUSD(args.amount)} failed`, body);
+    ${cta(url, 'Retry or reschedule')}
+  `);
   await send(args.payerEmail, `Action needed: scheduled payment of ${fmtUSD(args.amount)} to ${args.senderName} failed`, html);
 }
