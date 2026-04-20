@@ -1,14 +1,23 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  conflict,
+  internalError,
+} from '@/lib/errors';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const { data: paymentReq, error: reqError } = await supabase
     .from('payment_requests')
@@ -17,23 +26,32 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single();
 
   if (reqError || !paymentReq) {
-    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
   }
 
-  // Only recipient can pay
   const isRecipient =
-    paymentReq.recipient_id === user.id || paymentReq.recipient_email === user.email;
+    paymentReq.recipient_id === user.id ||
+    paymentReq.recipient_email === user.email;
 
   if (!isRecipient) {
-    return NextResponse.json({ error: 'Only recipient can pay' }, { status: 403 });
+    return forbidden(
+      'FORBIDDEN_NOT_RECIPIENT',
+      'Only the recipient can pay this request.'
+    );
   }
 
   if (paymentReq.status !== 1) {
-    return NextResponse.json({ error: 'Request is not pending' }, { status: 400 });
+    return conflict(
+      'INVALID_STATUS',
+      `Request is not pending (current status: ${paymentReq.status}).`
+    );
   }
 
-  if (paymentReq.expired === 1 || new Date(paymentReq.expires_at) < new Date()) {
-    return NextResponse.json({ error: 'Request expired' }, { status: 400 });
+  if (
+    paymentReq.expired === 1 ||
+    new Date(paymentReq.expires_at) < new Date()
+  ) {
+    return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
   const { data: payer } = await supabase
@@ -43,19 +61,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single();
 
   if (!payer || payer.balance < paymentReq.amount) {
-    return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+    return badRequest(
+      'INSUFFICIENT_BALANCE',
+      'Your balance is insufficient to complete this payment.'
+    );
   }
 
-  const { error: updateError } = await supabase.rpc('execute_payment', {
+  const { error: execError } = await supabase.rpc('execute_payment', {
     p_request_id: id,
     p_from_user_id: user.id,
     p_to_user_id: paymentReq.sender_id,
     p_amount: paymentReq.amount,
   });
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 400 });
-  }
+  if (execError) return internalError(execError.message);
 
   const { data: updated } = await supabase
     .from('payment_requests')

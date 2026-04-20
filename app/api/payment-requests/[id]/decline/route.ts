@@ -1,14 +1,22 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  unauthorized,
+  forbidden,
+  notFound,
+  conflict,
+  internalError,
+} from '@/lib/errors';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const { data: paymentReq, error: reqError } = await supabase
     .from('payment_requests')
@@ -17,19 +25,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single();
 
   if (reqError || !paymentReq) {
-    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
   }
 
-  // Only recipient can decline
   const isRecipient =
-    paymentReq.recipient_id === user.id || paymentReq.recipient_email === user.email;
+    paymentReq.recipient_id === user.id ||
+    paymentReq.recipient_email === user.email;
 
   if (!isRecipient) {
-    return NextResponse.json({ error: 'Only recipient can decline' }, { status: 403 });
+    return forbidden(
+      'FORBIDDEN_NOT_RECIPIENT',
+      'Only the recipient can decline this request.'
+    );
   }
 
   if (paymentReq.status !== 1) {
-    return NextResponse.json({ error: 'Request is not pending' }, { status: 400 });
+    return conflict(
+      'INVALID_STATUS',
+      `Request is not pending (current status: ${paymentReq.status}).`
+    );
   }
 
   const { data: updated, error: updateError } = await supabase
@@ -39,9 +53,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .select()
     .single();
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 400 });
-  }
+  if (updateError) return internalError(updateError.message);
 
   return NextResponse.json(updated);
 }

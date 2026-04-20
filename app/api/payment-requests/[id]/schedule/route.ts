@@ -1,19 +1,38 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  conflict,
+  internalError,
+} from '@/lib/errors';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return unauthorized();
+
+  const body = await request.json().catch(() => null);
+  if (!body?.scheduled_payment_date) {
+    return badRequest('MISSING_FIELD', 'scheduled_payment_date is required.', [
+      { field: 'scheduled_payment_date', issue: 'required' },
+    ]);
   }
 
-  const { scheduled_payment_date } = await request.json();
-
-  if (!scheduled_payment_date) {
-    return NextResponse.json({ error: 'scheduled_payment_date is required' }, { status: 400 });
+  const scheduledDate = new Date(body.scheduled_payment_date);
+  if (Number.isNaN(scheduledDate.getTime())) {
+    return badRequest(
+      'INVALID_DATE',
+      'scheduled_payment_date must be a valid ISO date.',
+      [{ field: 'scheduled_payment_date', issue: 'invalid date format' }]
+    );
   }
 
   const { data: paymentReq, error: reqError } = await supabase
@@ -23,36 +42,44 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single();
 
   if (reqError || !paymentReq) {
-    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
   }
 
-  // Only recipient can schedule
   const isRecipient =
-    paymentReq.recipient_id === user.id || paymentReq.recipient_email === user.email;
+    paymentReq.recipient_id === user.id ||
+    paymentReq.recipient_email === user.email;
 
   if (!isRecipient) {
-    return NextResponse.json({ error: 'Only recipient can schedule' }, { status: 403 });
-  }
-
-  // Can only schedule pending or failed requests
-  if (paymentReq.status !== 1 && paymentReq.status !== 7) {
-    return NextResponse.json(
-      { error: 'Can only schedule pending or failed requests' },
-      { status: 400 }
+    return forbidden(
+      'FORBIDDEN_NOT_RECIPIENT',
+      'Only the recipient can schedule this payment.'
     );
   }
 
-  if (paymentReq.expired === 1 || new Date(paymentReq.expires_at) < new Date()) {
-    return NextResponse.json({ error: 'Request expired' }, { status: 400 });
+  if (paymentReq.status !== 1 && paymentReq.status !== 7) {
+    return conflict(
+      'INVALID_STATUS',
+      `Only pending or failed requests can be scheduled (current status: ${paymentReq.status}).`
+    );
   }
 
-  const scheduledDate = new Date(scheduled_payment_date);
-  const expiresDate = new Date(paymentReq.expires_at);
+  if (
+    paymentReq.expired === 1 ||
+    new Date(paymentReq.expires_at) < new Date()
+  ) {
+    return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
+  }
 
-  if (scheduledDate > expiresDate) {
-    return NextResponse.json(
-      { error: 'scheduled_payment_date must be before expiration' },
-      { status: 400 }
+  if (scheduledDate > new Date(paymentReq.expires_at)) {
+    return badRequest(
+      'INVALID_SCHEDULE_DATE',
+      'scheduled_payment_date must be on or before the expiration date.',
+      [
+        {
+          field: 'scheduled_payment_date',
+          issue: `must be before ${paymentReq.expires_at}`,
+        },
+      ]
     );
   }
 
@@ -67,9 +94,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .select()
     .single();
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 400 });
-  }
+  if (updateError) return internalError(updateError.message);
 
   return NextResponse.json(updated);
 }

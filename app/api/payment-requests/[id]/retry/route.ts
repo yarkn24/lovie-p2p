@@ -1,19 +1,34 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  conflict,
+  internalError,
+} from '@/lib/errors';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
-  const { action, scheduled_payment_date } = await request.json();
+  const body = await request.json().catch(() => null);
+  const action = body?.action;
+  const scheduled_payment_date = body?.scheduled_payment_date;
 
   if (!action || !['pay_now', 'reschedule'].includes(action)) {
-    return NextResponse.json({ error: 'action must be "pay_now" or "reschedule"' }, { status: 400 });
+    return badRequest(
+      'MISSING_FIELD',
+      'action must be "pay_now" or "reschedule".',
+      [{ field: 'action', issue: 'must be "pay_now" or "reschedule"' }]
+    );
   }
 
   const { data: paymentReq, error: reqError } = await supabase
@@ -23,63 +38,56 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single();
 
   if (reqError || !paymentReq) {
-    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
   }
 
-  // Only recipient can retry
   const isRecipient =
-    paymentReq.recipient_id === user.id || paymentReq.recipient_email === user.email;
+    paymentReq.recipient_id === user.id ||
+    paymentReq.recipient_email === user.email;
 
   if (!isRecipient) {
-    return NextResponse.json({ error: 'Only recipient can retry' }, { status: 403 });
+    return forbidden(
+      'FORBIDDEN_NOT_RECIPIENT',
+      'Only the recipient can retry this request.'
+    );
   }
 
-  // Can only retry failed requests
   if (paymentReq.status !== 7) {
-    return NextResponse.json({ error: 'Can only retry failed requests' }, { status: 400 });
+    return conflict(
+      'INVALID_STATUS',
+      `Only failed requests can be retried (current status: ${paymentReq.status}).`
+    );
   }
 
-  if (paymentReq.expired === 1 || new Date(paymentReq.expires_at) < new Date()) {
-    return NextResponse.json({ error: 'Request expired' }, { status: 400 });
+  if (
+    paymentReq.expired === 1 ||
+    new Date(paymentReq.expires_at) < new Date()
+  ) {
+    return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
   if (action === 'pay_now') {
-    // Get sender balance
-    const { data: sender } = await supabase
+    const { data: payer } = await supabase
       .from('users')
       .select('balance')
-      .eq('id', paymentReq.sender_id)
+      .eq('id', user.id)
       .single();
 
-    if (!sender || sender.balance < paymentReq.amount) {
-      return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+    if (!payer || payer.balance < paymentReq.amount) {
+      return badRequest(
+        'INSUFFICIENT_BALANCE',
+        'Your balance is insufficient to complete this payment.'
+      );
     }
 
-    // Ensure recipient_id is set
-    let recipient_id = paymentReq.recipient_id;
-    if (!recipient_id) {
-      const { data: recipient } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', paymentReq.recipient_email)
-        .single();
-
-      if (!recipient) {
-        return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
-      }
-      recipient_id = recipient.id;
-    }
-
-    const { error: executeError } = await supabase.rpc('execute_payment', {
+    const { error: execError } = await supabase.rpc('execute_payment', {
       p_request_id: id,
-      p_from_user_id: paymentReq.sender_id,
-      p_to_user_id: recipient_id,
+      p_from_user_id: user.id,
+      p_to_user_id: paymentReq.sender_id,
       p_amount: paymentReq.amount,
     });
 
-    if (executeError) {
-      return NextResponse.json({ error: executeError.message }, { status: 400 });
-    }
+    if (execError) return internalError(execError.message);
 
     const { data: updated } = await supabase
       .from('payment_requests')
@@ -88,40 +96,51 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .single();
 
     return NextResponse.json(updated);
-  } else {
-    // Reschedule
-    if (!scheduled_payment_date) {
-      return NextResponse.json(
-        { error: 'scheduled_payment_date required for reschedule' },
-        { status: 400 }
-      );
-    }
-
-    const scheduledDate = new Date(scheduled_payment_date);
-    const expiresDate = new Date(paymentReq.expires_at);
-
-    if (scheduledDate > expiresDate) {
-      return NextResponse.json(
-        { error: 'scheduled_payment_date must be before expiration' },
-        { status: 400 }
-      );
-    }
-
-    const { data: updated, error: updateError } = await supabase
-      .from('payment_requests')
-      .update({
-        status: 5,
-        scheduled_payment_date: scheduledDate.toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
-    }
-
-    return NextResponse.json(updated);
   }
+
+  if (!scheduled_payment_date) {
+    return badRequest(
+      'MISSING_FIELD',
+      'scheduled_payment_date is required for reschedule.',
+      [{ field: 'scheduled_payment_date', issue: 'required' }]
+    );
+  }
+
+  const scheduledDate = new Date(scheduled_payment_date);
+  if (Number.isNaN(scheduledDate.getTime())) {
+    return badRequest(
+      'INVALID_DATE',
+      'scheduled_payment_date must be a valid ISO date.',
+      [{ field: 'scheduled_payment_date', issue: 'invalid date format' }]
+    );
+  }
+
+  if (scheduledDate > new Date(paymentReq.expires_at)) {
+    return badRequest(
+      'INVALID_SCHEDULE_DATE',
+      'scheduled_payment_date must be on or before the expiration date.',
+      [
+        {
+          field: 'scheduled_payment_date',
+          issue: `must be before ${paymentReq.expires_at}`,
+        },
+      ]
+    );
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from('payment_requests')
+    .update({
+      status: 5,
+      scheduled_payment_date: scheduledDate.toISOString(),
+      failure_reason: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateError) return internalError(updateError.message);
+
+  return NextResponse.json(updated);
 }

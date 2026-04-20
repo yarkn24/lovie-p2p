@@ -1,33 +1,83 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  badRequest,
+  unauthorized,
+  internalError,
+  ApiErrorDetail,
+} from '@/lib/errors';
+import {
+  containsBadWords,
+  isValidEmail,
+  MAX_NOTE_LENGTH,
+} from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return unauthorized();
+
+  const body = await request.json().catch(() => null);
+  if (!body) {
+    return badRequest('MISSING_FIELD', 'Request body must be valid JSON.');
   }
 
-  const { recipient_email, amount, note } = await request.json();
+  const { recipient_email, amount, note } = body as {
+    recipient_email?: string;
+    amount?: number;
+    note?: string | null;
+  };
 
-  if (!recipient_email || !amount || amount <= 0) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+  const details: ApiErrorDetail[] = [];
+
+  if (!recipient_email) {
+    details.push({ field: 'recipient_email', issue: 'required' });
+  } else if (!isValidEmail(recipient_email)) {
+    details.push({ field: 'recipient_email', issue: 'invalid email format' });
+  }
+
+  if (amount === undefined || amount === null) {
+    details.push({ field: 'amount', issue: 'required' });
+  } else if (typeof amount !== 'number' || Number.isNaN(amount)) {
+    details.push({ field: 'amount', issue: 'must be a number' });
+  } else if (amount <= 0) {
+    details.push({ field: 'amount', issue: 'must be greater than zero' });
+  }
+
+  if (note && typeof note !== 'string') {
+    details.push({ field: 'note', issue: 'must be a string' });
+  } else if (note && note.length > MAX_NOTE_LENGTH) {
+    details.push({
+      field: 'note',
+      issue: `must be ${MAX_NOTE_LENGTH} characters or fewer`,
+    });
+  }
+
+  if (details.length > 0) {
+    return badRequest('MISSING_FIELD', 'Request validation failed.', details);
+  }
+
+  const badWord = containsBadWords(note);
+  if (badWord) {
+    return badRequest(
+      'BAD_WORDS_IN_NOTE',
+      'Note contains inappropriate language. Please revise.',
+      [{ field: 'note', issue: `contains prohibited word: "${badWord}"` }]
+    );
   }
 
   const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  let recipient_id = null;
+  let recipient_id: string | null = null;
   if (recipient_email !== user.email) {
     const { data: recipient } = await supabase
       .from('users')
       .select('id')
-      .eq('email', recipient_email)
+      .eq('email', recipient_email!)
       .single();
 
-    if (recipient) {
-      recipient_id = recipient.id;
-    }
+    if (recipient) recipient_id = recipient.id;
   }
 
   const { data, error } = await supabase
@@ -36,17 +86,15 @@ export async function POST(request: NextRequest) {
       sender_id: user.id,
       recipient_id,
       recipient_email,
-      amount: Math.round(amount * 100),
+      amount: Math.round(amount! * 100),
       status: 1,
       expires_at,
-      note,
+      note: note || null,
     })
     .select()
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+  if (error) return internalError(error.message);
 
   return NextResponse.json(data, { status: 201 });
 }
@@ -55,13 +103,10 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const direction = request.nextUrl.searchParams.get('direction') || 'incoming';
   const statuses = request.nextUrl.searchParams.getAll('status');
-  const search = request.nextUrl.searchParams.get('search') || '';
 
   let query = supabase
     .from('payment_requests')
@@ -81,9 +126,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+  if (error) return internalError(error.message);
 
   return NextResponse.json(data || []);
 }

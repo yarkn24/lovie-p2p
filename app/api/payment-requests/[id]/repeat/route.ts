@@ -1,14 +1,22 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  unauthorized,
+  forbidden,
+  notFound,
+  conflict,
+  internalError,
+} from '@/lib/errors';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return unauthorized();
 
   const { data: paymentReq, error: reqError } = await supabase
     .from('payment_requests')
@@ -17,24 +25,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .single();
 
   if (reqError || !paymentReq) {
-    return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+    return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
   }
 
-  // Only sender can repeat
   if (paymentReq.sender_id !== user.id) {
-    return NextResponse.json({ error: 'Only sender can repeat' }, { status: 403 });
+    return forbidden(
+      'FORBIDDEN_NOT_SENDER',
+      'Only the sender can repeat this request.'
+    );
   }
 
-  // Can only repeat declined requests
   if (paymentReq.status !== 3) {
-    return NextResponse.json({ error: 'Can only repeat declined requests' }, { status: 400 });
+    return conflict(
+      'INVALID_STATUS',
+      `Only declined requests can be repeated (current status: ${paymentReq.status}).`
+    );
   }
 
-  // Check if already repeated
   if (paymentReq.repeated === 1) {
-    return NextResponse.json(
-      { error: 'You already repeated this request' },
-      { status: 400 }
+    return conflict(
+      'ALREADY_REPEATED',
+      'This request has already been repeated.'
     );
   }
 
@@ -43,11 +54,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     { p_request_id: id }
   );
 
-  if (repeatError) {
-    return NextResponse.json({ error: repeatError.message }, { status: 400 });
-  }
+  if (repeatError) return internalError(repeatError.message);
 
-  // Fetch and return the new request
   const { data: newRequest } = await supabase
     .from('payment_requests')
     .select('*')
