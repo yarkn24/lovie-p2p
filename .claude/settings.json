@@ -26,26 +26,5 @@
     "auto-hooks": true,
     "token-optimized": true,
     "no-file-reads": "prompts embedded in settings.json"
-  },
-  "hooks": {
-    "PostWrite": [
-      {
-        "command": "bash .claude/hooks/check-alignment.sh",
-        "description": "Auto-check alignment vs. Lovie_task.md + Spec-Kit after every write"
-      }
-    ],
-    "PostEdit": [
-      {
-        "command": "bash .claude/hooks/check-alignment.sh",
-        "description": "Auto-check alignment vs. Lovie_task.md + Spec-Kit after every edit"
-      }
-    ],
-    "PostBash": [
-      {
-        "condition": "git log -1 --pretty=%B | grep -qi 'commit|push'",
-        "command": "bash .claude/hooks/check-alignment.sh",
-        "description": "Auto-check alignment vs. Lovie_task.md + Spec-Kit after git operations"
-      }
-    ]
   }
 }

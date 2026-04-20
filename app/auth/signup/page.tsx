@@ -39,14 +39,14 @@ export default function SignupPage() {
         email: user.email,
         first_name: firstName,
         last_name: lastName,
-        balance: 10000, // 100 dollars for testing
+        balance: 1000000, // $10,000 in cents
       })
       .select();
 
     if (err) {
       setError(err.message);
     } else {
-      router.push('/dashboard');
+      router.push('/');
     }
     setLoading(false);
   };
