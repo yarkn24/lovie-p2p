@@ -49,7 +49,7 @@ export default function Dashboard() {
   const [me, setMe] = useState<Me | null>(null);
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [tab, setTab] = useState<'incoming' | 'outgoing'>('incoming');
-  const [filter, setFilter] = useState<'all' | 'pending' | 'paid' | 'declined' | 'expired' | 'cancelled' | 'failed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'scheduled' | 'paid' | 'declined' | 'expired' | 'cancelled' | 'failed'>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [adjustAmount, setAdjustAmount] = useState('');
@@ -98,7 +98,8 @@ export default function Dashboard() {
   const filtered = useMemo(() => {
     return requests
       .filter((r) => {
-        if (filter === 'pending') return r.status === 1 || r.status === 5;
+        if (filter === 'pending') return r.status === 1;
+        if (filter === 'scheduled') return r.status === 5;
         if (filter === 'paid') return r.status === 2;
         if (filter === 'declined') return r.status === 3;
         if (filter === 'expired') return r.status === 4;
@@ -211,7 +212,8 @@ export default function Dashboard() {
                 className="text-sm px-3 py-1.5 rounded-[var(--radius-lovie)] border border-[var(--color-line)] bg-white"
               >
                 <option value="all">All statuses</option>
-                <option value="pending">Pending & Scheduled</option>
+                <option value="pending">Pending</option>
+                <option value="scheduled">Scheduled</option>
                 <option value="paid">Paid</option>
                 <option value="declined">Declined</option>
                 <option value="expired">Expired</option>
