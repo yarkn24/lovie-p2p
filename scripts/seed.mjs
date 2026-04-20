@@ -35,9 +35,9 @@ const supabase = createClient(url, serviceKey, {
 });
 
 const DEMO_USERS = [
-  { email: 'user1@demo.lovie.co', first_name: 'User',   last_name: 'One',   balance: 1250000 },
-  { email: 'user2@demo.lovie.co', first_name: 'User',   last_name: 'Two',   balance:  980000 },
-  { email: 'user3@demo.lovie.co', first_name: 'User',   last_name: 'Three', balance: 1540000 },
+  { email: 'user1@demo.lovie.co', first_name: 'Sarah',   last_name: 'Johnson',   balance: 1250000 },
+  { email: 'user2@demo.lovie.co', first_name: 'Michael', last_name: 'Rodriguez', balance:  980000 },
+  { email: 'user3@demo.lovie.co', first_name: 'David',   last_name: 'Chen',      balance: 1540000 },
 ];
 const PASSWORD = '123';
 

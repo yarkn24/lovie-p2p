@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { getAvatar } from '@/lib/avatars';
 
 type Props = {
   children: ReactNode;
@@ -11,10 +13,11 @@ type Props = {
 
 export default function Shell({ children, user }: Props) {
   const router = useRouter();
+  const avatar = getAvatar(user?.email);
 
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    router.push('/auth/login');
+    window.location.href = '/auth/login';
   };
 
   const initials =
@@ -24,41 +27,45 @@ export default function Shell({ children, user }: Props) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-[var(--color-line)] bg-white/70 backdrop-blur">
+      <header style={{ borderBottom: '1px solid var(--color-line)', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-[var(--color-brand)] grid place-items-center">
-              <span className="text-white font-bold text-sm">L</span>
-            </div>
-            <span className="font-semibold tracking-tight text-[var(--color-ink)]">
-              Lovie <span className="text-[var(--color-muted)] font-normal">Payments</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image src="/lovie-logo.png" alt="Lovie" width={28} height={28} className="rounded-md" />
+            <span style={{ fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
+              Lovie <span style={{ color: 'var(--color-muted)', fontWeight: 400 }}>Payments</span>
             </span>
           </Link>
 
-          {user ? (
+          {user && (
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-sm">
-                <div className="w-8 h-8 rounded-full bg-[var(--color-bg-2)] grid place-items-center text-xs font-semibold text-[var(--color-ink-2)]">
-                  {initials}
+              <div className="hidden sm:flex items-center gap-2.5 text-sm">
+                <div className="w-8 h-8 rounded-full overflow-hidden" style={{ background: 'var(--color-bg-2)', flexShrink: 0 }}>
+                  {avatar ? (
+                    <Image src={avatar} alt={user.first_name ?? ''} width={32} height={32} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full grid place-items-center text-xs font-semibold" style={{ color: 'var(--color-ink-2)' }}>
+                      {initials}
+                    </div>
+                  )}
                 </div>
                 <div className="leading-tight">
-                  <div className="font-medium text-[var(--color-ink)]">
+                  <div style={{ fontWeight: 500, color: 'var(--color-ink)' }}>
                     {user.first_name} {user.last_name}
                   </div>
-                  <div className="text-[var(--color-muted)] text-xs">{user.email}</div>
+                  <div style={{ color: 'var(--color-muted)', fontSize: '0.75rem' }}>{user.email}</div>
                 </div>
               </div>
               <button onClick={logout} className="btn-ghost text-sm">
                 Sign out
               </button>
             </div>
-          ) : null}
+          )}
         </div>
       </header>
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-[var(--color-line)] mt-12 py-6 text-center text-xs text-[var(--color-muted)]">
+      <footer style={{ borderTop: '1px solid var(--color-line)', marginTop: '3rem', padding: '1.5rem 0', textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
         Lovie P2P demo · Mock data · Built for the Lovie Feature Engineer interview
       </footer>
     </div>

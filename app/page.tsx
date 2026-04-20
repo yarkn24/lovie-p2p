@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Shell from '@/components/Shell';
+import { getAvatar } from '@/lib/avatars';
 
 type PaymentRequest = {
   id: string;
@@ -133,41 +135,31 @@ export default function Dashboard() {
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Hero */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="card p-6 md:col-span-2 bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-2)] text-white border-transparent">
-            <div className="text-sm/none opacity-80 mb-1">Available balance</div>
-            <div className="text-4xl font-semibold tracking-tight">
-              {me ? fmtUSD(me.balance) : '—'}
+          <div className="card md:col-span-2 p-6 border-transparent"
+            style={{ background: 'linear-gradient(135deg, #0546bf 0%, #065b98 100%)', color: 'white' }}>
+            <div style={{ fontSize: '0.75rem', opacity: 0.75, marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+              Available balance
             </div>
-            <div className="mt-6 flex flex-wrap gap-2 items-center">
-              <Link href="/requests/new" className="bg-white text-[var(--color-brand)] px-4 py-2 rounded-[var(--radius-lovie)] font-medium text-sm hover:bg-white/90">
-                New request
+            <div style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              {me ? fmtUSD(me.balance) : <span style={{ opacity: 0.4 }}>—</span>}
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2 items-center">
+              <Link href="/requests/new"
+                style={{ background: 'white', color: '#0546bf', padding: '0.5rem 1rem', borderRadius: '0.625rem', fontWeight: 500, fontSize: '0.875rem' }}>
+                + New request
               </Link>
-              <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-[var(--radius-lovie)] p-1">
-                <span className="pl-2 text-white/70 text-sm">$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={adjustAmount}
-                  onChange={(e) => setAdjustAmount(e.target.value)}
-                  className="bg-transparent w-20 text-sm text-white placeholder:text-white/50 outline-none"
-                />
-                <button
-                  onClick={() => adjustBalance('add')}
-                  disabled={adjusting || !adjustAmount}
-                  className="px-2 py-1 text-sm bg-white/15 hover:bg-white/25 rounded-md disabled:opacity-40"
-                  title="Admin: add funds"
-                >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '0.625rem', padding: '0.25rem' }}>
+                <span style={{ paddingLeft: '0.5rem', opacity: 0.7, fontSize: '0.875rem' }}>$</span>
+                <input type="number" step="0.01" min="0" placeholder="0.00"
+                  value={adjustAmount} onChange={(e) => setAdjustAmount(e.target.value)}
+                  style={{ background: 'transparent', width: '5rem', fontSize: '0.875rem', color: 'white', outline: 'none' }} />
+                <button onClick={() => adjustBalance('add')} disabled={adjusting || !adjustAmount}
+                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.15)', borderRadius: '0.375rem', cursor: 'pointer', color: 'white', opacity: (adjusting || !adjustAmount) ? 0.4 : 1 }}>
                   + Add
                 </button>
-                <button
-                  onClick={() => adjustBalance('subtract')}
-                  disabled={adjusting || !adjustAmount}
-                  className="px-2 py-1 text-sm bg-white/15 hover:bg-white/25 rounded-md disabled:opacity-40"
-                  title="Admin: subtract funds"
-                >
-                  − Subtract
+                <button onClick={() => adjustBalance('subtract')} disabled={adjusting || !adjustAmount}
+                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.15)', borderRadius: '0.375rem', cursor: 'pointer', color: 'white', opacity: (adjusting || !adjustAmount) ? 0.4 : 1 }}>
+                  − Sub
                 </button>
               </div>
             </div>
@@ -253,6 +245,7 @@ export default function Dashboard() {
                     : r.recipient_email;
                 const counterEmail =
                   tab === 'incoming' ? r.sender?.email : r.recipient?.email ?? r.recipient_email;
+                const counterAvatar = getAvatar(counterEmail);
                 const s = STATUS[r.status] ?? STATUS[1];
                 return (
                   <li key={r.id}>
@@ -260,13 +253,17 @@ export default function Dashboard() {
                       href={`/requests/${r.id}`}
                       className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--color-bg)] transition"
                     >
-                      <div className="w-10 h-10 rounded-full bg-[var(--color-bg-2)] grid place-items-center text-sm font-semibold text-[var(--color-ink-2)] shrink-0">
-                        {counterparty
-                          .split(' ')
-                          .map((p) => p[0])
-                          .slice(0, 2)
-                          .join('')
-                          .toUpperCase()}
+                      <div className="w-10 h-10 rounded-full overflow-hidden shrink-0"
+                        style={{ background: 'var(--color-bg-2)', flexShrink: 0 }}>
+                        {counterAvatar ? (
+                          <Image src={counterAvatar} alt={counterparty} width={40} height={40}
+                            className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full grid place-items-center text-sm font-semibold"
+                            style={{ color: 'var(--color-ink-2)' }}>
+                            {counterparty.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-[var(--color-ink)] truncate">
