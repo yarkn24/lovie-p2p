@@ -1,8 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://lovie-p2p-gules.vercel.app';
 const FROM = 'Lovie <onboarding@resend.dev>';
+
+// Lazy init — avoids "Missing API key" crash at build time
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ─── Lovie brand palette ──────────────────────────────────────────────────────
 // Dark navy: #0a0f1e  |  Brand blue: #2563eb  |  Cyan: #06b6d4
@@ -107,7 +111,7 @@ function body(text: string) {
 }
 
 async function send(to: string, subject: string, html: string) {
-  const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+  const { error } = await getResend().emails.send({ from: FROM, to, subject, html });
   if (error) throw new Error(`Email send failed: ${error.message}`);
 }
 
