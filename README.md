@@ -7,7 +7,7 @@ pay, decline, or schedule payment. Requests expire after 7 days.
 Built spec-first using [GitHub Spec-Kit](https://github.com/github/spec-kit),
 implemented with Claude Code, deployed on Vercel + Supabase.
 
-- **Live demo**: _added after deploy_
+- **Live demo**: https://lovie-p2p-gules.vercel.app
 - **Spec**: [`.specify/specs/p2p-payment-requests/spec.md`](../.specify/specs/p2p-payment-requests/spec.md)
 
 ---
