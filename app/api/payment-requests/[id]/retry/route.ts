@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   unauthorized,
@@ -66,38 +67,70 @@ export async function POST(
     return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
+  const admin = createAdminClient();
+
   if (action === 'pay_now') {
-    const { data: payer } = await supabase
+    const { data: payerProfile, error: balErr } = await admin
       .from('users')
       .select('balance')
       .eq('id', user.id)
       .single();
 
-    if (!payer || payer.balance < paymentReq.amount) {
+    if (balErr || !payerProfile) return internalError('Could not fetch balance.');
+
+    if (payerProfile.balance < paymentReq.amount) {
       return badRequest(
         'INSUFFICIENT_BALANCE',
         'Your balance is insufficient to complete this payment.'
       );
     }
 
-    const { error: execError } = await supabase.rpc('execute_payment', {
-      p_request_id: id,
-      p_from_user_id: user.id,
-      p_to_user_id: paymentReq.sender_id,
-      p_amount: paymentReq.amount,
+    // Deduct from payer
+    const { error: deductErr } = await admin
+      .from('users')
+      .update({ balance: payerProfile.balance - paymentReq.amount, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+
+    if (deductErr) return internalError(deductErr.message);
+
+    // Credit sender
+    const { data: senderProfile } = await admin
+      .from('users')
+      .select('balance')
+      .eq('id', paymentReq.sender_id)
+      .single();
+
+    if (senderProfile) {
+      await admin
+        .from('users')
+        .update({ balance: senderProfile.balance + paymentReq.amount, updated_at: new Date().toISOString() })
+        .eq('id', paymentReq.sender_id);
+    }
+
+    // Record transaction
+    await admin.from('payment_transactions').insert({
+      request_id: id,
+      from_user_id: user.id,
+      to_user_id: paymentReq.sender_id,
+      amount: paymentReq.amount,
+      transaction_type: 'manual_pay',
+      status: 'success',
+      paid_at: new Date().toISOString(),
     });
 
-    if (execError) return internalError(execError.message);
-
-    const { data: updated } = await supabase
+    const { data: updated, error: updateErr } = await admin
       .from('payment_requests')
-      .select('*')
+      .update({ status: 2, updated_at: new Date().toISOString() })
       .eq('id', id)
+      .select()
       .single();
+
+    if (updateErr) return internalError(updateErr.message);
 
     return NextResponse.json(updated);
   }
 
+  // reschedule
   if (!scheduled_payment_date) {
     return badRequest(
       'MISSING_FIELD',
@@ -128,12 +161,11 @@ export async function POST(
     );
   }
 
-  const { data: updated, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await admin
     .from('payment_requests')
     .update({
       status: 5,
       scheduled_payment_date: scheduledDate.toISOString(),
-      failure_reason: null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

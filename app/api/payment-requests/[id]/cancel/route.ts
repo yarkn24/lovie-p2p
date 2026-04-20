@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendRequestCancelledEmail } from '@/lib/email';
 import {
@@ -43,7 +44,8 @@ export async function POST(
     );
   }
 
-  const { data: updated, error: updateError } = await supabase
+  const admin = createAdminClient();
+  const { data: updated, error: updateError } = await admin
     .from('payment_requests')
     .update({ status: 6, updated_at: new Date().toISOString() })
     .eq('id', id)

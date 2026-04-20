@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPaymentReceivedEmail } from '@/lib/email';
 import {
@@ -55,17 +56,71 @@ export async function POST(
     return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
-  const { error: execError } = await supabase.rpc('execute_payment', {
-    p_request_id: id,
-    p_from_user_id: user.id,
-    p_to_user_id: paymentReq.sender_id,
-    p_amount: paymentReq.amount,
+  const admin = createAdminClient();
+
+  // Check payer balance
+  const { data: payerProfile, error: balErr } = await admin
+    .from('users')
+    .select('balance')
+    .eq('id', user.id)
+    .single();
+
+  if (balErr || !payerProfile) return internalError('Could not fetch balance.');
+
+  if (payerProfile.balance < paymentReq.amount) {
+    return badRequest(
+      'INSUFFICIENT_BALANCE',
+      'Your balance is insufficient to complete this payment.'
+    );
+  }
+
+  // Deduct from payer
+  const { error: deductErr } = await admin
+    .from('users')
+    .update({ balance: payerProfile.balance - paymentReq.amount, updated_at: new Date().toISOString() })
+    .eq('id', user.id);
+
+  if (deductErr) return internalError(deductErr.message);
+
+  // Credit sender
+  const { data: senderProfile } = await admin
+    .from('users')
+    .select('balance')
+    .eq('id', paymentReq.sender_id)
+    .single();
+
+  if (senderProfile) {
+    await admin
+      .from('users')
+      .update({ balance: senderProfile.balance + paymentReq.amount, updated_at: new Date().toISOString() })
+      .eq('id', paymentReq.sender_id);
+  }
+
+  // Record transaction
+  await admin.from('payment_transactions').insert({
+    request_id: id,
+    from_user_id: user.id,
+    to_user_id: paymentReq.sender_id,
+    amount: paymentReq.amount,
+    transaction_type: 'manual_pay',
+    status: 'success',
+    paid_at: new Date().toISOString(),
   });
 
-  // Notify sender that they got paid (fire-and-forget)
+  // Mark request as paid
+  const { data: updated, error: updateErr } = await admin
+    .from('payment_requests')
+    .update({ status: 2, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateErr) return internalError(updateErr.message);
+
+  // Notify sender (fire-and-forget)
   ;(async () => {
-    const { data: sender } = await supabase.from('users').select('email, first_name, last_name').eq('id', paymentReq.sender_id).single();
-    const { data: payer } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    const { data: sender } = await admin.from('users').select('email, first_name, last_name').eq('id', paymentReq.sender_id).single();
+    const { data: payer } = await admin.from('users').select('first_name, last_name').eq('id', user.id).single();
     if (sender?.email && payer) {
       await sendPaymentReceivedEmail({
         senderEmail: sender.email,
@@ -75,23 +130,6 @@ export async function POST(
       });
     }
   })().catch(() => {});
-
-  if (execError) {
-    const msg = execError.message;
-    if (msg.includes('INSUFFICIENT_BALANCE'))
-      return badRequest('INSUFFICIENT_BALANCE', 'Your balance is insufficient to complete this payment.');
-    if (msg.includes('INVALID_STATUS'))
-      return conflict('INVALID_STATUS', 'Request is no longer pending.');
-    if (msg.includes('REQUEST_NOT_FOUND'))
-      return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
-    return internalError(msg);
-  }
-
-  const { data: updated } = await supabase
-    .from('payment_requests')
-    .select('*')
-    .eq('id', id)
-    .single();
 
   return NextResponse.json(updated);
 }
