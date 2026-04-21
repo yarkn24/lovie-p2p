@@ -102,3 +102,9 @@ html, body {
 .chip-scheduled { background: #eff6ff; color: #1d4ed8; }
 .chip-cancelled { background: #f1f5f9; color: #475569; }
 .chip-failed  { background: #fff1f2; color: #be123c; }
+
+@keyframes balance-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
