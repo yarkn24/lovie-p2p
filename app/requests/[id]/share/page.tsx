@@ -9,13 +9,20 @@ export default function RequestShare() {
   const searchParams = useSearchParams();
   const pinnedEmail = searchParams.get('e') || '';
   const router = useRouter();
-  const [state, setState] = useState<'loading' | 'anon' | 'redirect' | 'error'>('loading');
+  const [state, setState] = useState<'loading' | 'anon' | 'wrong-account' | 'redirect' | 'error'>('loading');
+  const [loggedInEmail, setLoggedInEmail] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     (async () => {
       const userRes = await fetch('/api/auth/user', { credentials: 'include' });
       if (userRes.ok) {
+        const me = await userRes.json();
+        if (pinnedEmail && me.email !== pinnedEmail) {
+          setLoggedInEmail(me.email);
+          setState('wrong-account');
+          return;
+        }
         router.replace(`/requests/${id}`);
         setState('redirect');
         return;
@@ -25,10 +32,39 @@ export default function RequestShare() {
       setError('Could not load this request.');
       setState('error');
     });
-  }, [id, router]);
+  }, [id, router, pinnedEmail]);
 
   if (state === 'loading' || state === 'redirect') {
     return <div className="min-h-screen grid place-items-center text-sm text-[var(--color-muted)]">Loading…</div>;
+  }
+
+  if (state === 'wrong-account') {
+    return (
+      <div className="min-h-screen grid place-items-center px-6">
+        <div className="card w-full max-w-md p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-amber-100 grid place-items-center mx-auto mb-4 text-2xl">⚠️</div>
+          <h1 className="text-xl font-semibold tracking-tight">Wrong account</h1>
+          <p className="text-sm text-[var(--color-muted)] mt-2">
+            This request was sent to <span className="font-medium text-[var(--color-ink)]">{pinnedEmail}</span>,
+            but you&apos;re signed in as <span className="font-medium text-[var(--color-ink)]">{loggedInEmail}</span>.
+          </p>
+          <div className="flex flex-col gap-2 mt-6">
+            <button
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+                router.replace(`/auth/login?redirect=${encodeURIComponent(`/requests/${id}`)}&email=${encodeURIComponent(pinnedEmail)}`);
+              }}
+              className="btn-brand w-full"
+            >
+              Sign in as {pinnedEmail}
+            </button>
+            <Link href={`/requests/${id}`} className="btn-ghost w-full text-sm">
+              Continue as {loggedInEmail}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const emailParam = pinnedEmail ? `&email=${encodeURIComponent(pinnedEmail)}` : '';
