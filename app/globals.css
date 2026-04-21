@@ -108,3 +108,12 @@ html, body {
   50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+@keyframes lovie-spin-fade {
+  0%   { transform: rotate(0deg)   scale(1);    opacity: 1;   }
+  50%  { transform: rotate(180deg) scale(0.7);  opacity: 0.3; }
+  100% { transform: rotate(360deg) scale(1);    opacity: 1;   }
+}
+.lovie-loading {
+  animation: lovie-spin-fade 1.4s ease-in-out infinite;
+}

@@ -123,7 +123,7 @@ export default function RequestDetail() {
   if (loading) {
     return (
       <Shell user={me}>
-        <div className="max-w-3xl mx-auto p-10 text-sm text-[var(--color-muted)]">Loading…</div>
+        <div className="max-w-3xl mx-auto p-10 flex justify-center"><img src="/lovie-logo.png" alt="Loading" width={48} height={48} className="lovie-loading" /></div>
       </Shell>
     );
   }
@@ -249,8 +249,8 @@ export default function RequestDetail() {
             <div className="flex flex-wrap gap-2 items-center">
               {isRecipient && req.status === 1 && (
                 <>
-                  <button onClick={() => act('pay')} disabled={busy} className="btn-brand">
-                    {busy ? 'Processing…' : 'Pay now'}
+                  <button onClick={() => act('pay')} disabled={busy} className="btn-brand" style={{ minWidth: '7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                    {busy ? <><img src="/lovie-logo.png" width={18} height={18} className="lovie-loading" alt="" />Processing…</> : 'Pay now'}
                   </button>
                   <button onClick={() => act('decline')} disabled={busy} className="btn-danger">
                     Decline

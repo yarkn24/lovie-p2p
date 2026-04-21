@@ -337,7 +337,7 @@ export default function Dashboard() {
           </div>
 
           {loading ? (
-            <div className="p-10 text-center text-sm text-[var(--color-muted)]">Loading…</div>
+            <div className="p-10 flex justify-center"><img src="/lovie-logo.png" alt="Loading" width={48} height={48} className="lovie-loading" /></div>
           ) : filtered.length === 0 ? (
             <div className="p-10 text-center">
               <div className="text-[var(--color-muted)] text-sm">No {tab} requests match.</div>
