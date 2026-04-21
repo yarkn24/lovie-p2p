@@ -7,9 +7,9 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
 const DEMO_ACCOUNTS = [
-  { name: 'Sarah Johnson',   email: 'user1@demo.lovie.co', avatar: '/avatars/sarah.jpg' },
-  { name: 'Michael Rodriguez', email: 'user2@demo.lovie.co', avatar: '/avatars/michael.png' },
-  { name: 'David Chen',     email: 'user3@demo.lovie.co', avatar: '/avatars/david.png' },
+  { name: 'Sarah Johnson',   email: 'sarah.demo@lovie.co', avatar: '/avatars/sarah.jpg' },
+  { name: 'Michael Rodriguez', email: 'michael.demo@lovie.co', avatar: '/avatars/michael.png' },
+  { name: 'David Chen',     email: 'david.demo@lovie.co', avatar: '/avatars/david.png' },
 ];
 const DEMO_PASSWORD = '123';
 

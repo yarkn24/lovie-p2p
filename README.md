@@ -24,9 +24,9 @@ Three pre-seeded users with 30 mock payment requests spread across them:
 
 | Email                  | Password |
 | ---------------------- | -------- |
-| `user1@demo.lovie.co`  | `123`    |
-| `user2@demo.lovie.co`  | `123`    |
-| `user3@demo.lovie.co`  | `123`    |
+| `sarah.demo@lovie.co`  | `123`    |
+| `michael.demo@lovie.co`  | `123`    |
+| `david.demo@lovie.co`  | `123`    |
 
 Each user has 5 incoming pending requests and 5 outgoing paid requests
 (~$10 – $250 each). The dashboard also exposes **Admin: Add / Subtract** so a
