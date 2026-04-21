@@ -51,13 +51,7 @@ export async function POST(request: NextRequest) {
 
   if (!current) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  const newBalance = current.balance + delta;
-  if (newBalance < 0) {
-    return NextResponse.json(
-      { error: { type: 'validation_error', code: 'INSUFFICIENT_BALANCE', message: 'Balance would go negative.' } },
-      { status: 400 }
-    );
-  }
+  const newBalance = Math.max(0, current.balance + delta);
 
   const { data: updated, error: updateErr } = await admin
     .from('users')
