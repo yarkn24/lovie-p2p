@@ -16,7 +16,8 @@ export default function NewRequest() {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ recipient_email: '', amount: '', note: '' });
+  const [contactType, setContactType] = useState<'email' | 'phone'>('email');
+  const [form, setForm] = useState({ recipient: '', amount: '', note: '' });
 
   useEffect(() => {
     (async () => {
@@ -31,7 +32,7 @@ export default function NewRequest() {
     setError('');
     setLoading(true);
     try {
-      if (!form.recipient_email || !form.amount) throw new Error('Email and amount are required.');
+      if (!form.recipient || !form.amount) throw new Error(`${contactType === 'email' ? 'Email' : 'Phone'} and amount are required.`);
       const amt = parseFloat(form.amount);
       if (amt <= 0) throw new Error('Amount must be greater than zero.');
       if (form.note.length > 500) throw new Error('Note must be 500 characters or less.');
@@ -41,7 +42,7 @@ export default function NewRequest() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          recipient_email: form.recipient_email,
+          [contactType === 'email' ? 'recipient_email' : 'recipient_phone']: form.recipient,
           amount: amt,
           note: form.note || null,
         }),
@@ -75,7 +76,7 @@ export default function NewRequest() {
         <div className="card mt-4 p-8">
           <h1 className="text-2xl font-semibold tracking-tight">Request payment</h1>
           <p className="text-sm text-[var(--color-muted)] mt-1">
-            Send a request by email. Recipients have 7 days to pay, decline, or schedule.
+            Send a request by email or phone. Recipients have 7 days to pay, decline, or schedule.
           </p>
 
           {error && (
@@ -86,13 +87,33 @@ export default function NewRequest() {
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="text-xs font-medium text-[var(--color-ink-3)]">Recipient email</label>
+              <label className="text-xs font-medium text-[var(--color-ink-3)]">Send to</label>
+              <div className="flex rounded-[var(--radius-lovie)] bg-[var(--color-bg)] border border-[var(--color-line)] p-0.5 mt-1 w-fit">
+                <button
+                  type="button"
+                  onClick={() => { setContactType('email'); setForm({ ...form, recipient: '' }); }}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                    contactType === 'email' ? 'bg-white text-[var(--color-ink)] shadow-sm' : 'text-[var(--color-muted)]'
+                  }`}
+                >
+                  Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setContactType('phone'); setForm({ ...form, recipient: '' }); }}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                    contactType === 'phone' ? 'bg-white text-[var(--color-ink)] shadow-sm' : 'text-[var(--color-muted)]'
+                  }`}
+                >
+                  Phone
+                </button>
+              </div>
               <input
-                type="email"
-                value={form.recipient_email}
-                onChange={(e) => setForm({ ...form, recipient_email: e.target.value })}
-                placeholder="friend@example.com"
-                className="input mt-1"
+                type={contactType === 'email' ? 'email' : 'tel'}
+                value={form.recipient}
+                onChange={(e) => setForm({ ...form, recipient: e.target.value })}
+                placeholder={contactType === 'email' ? 'friend@example.com' : '+1 415 555 1234'}
+                className="input mt-2"
                 required
               />
             </div>

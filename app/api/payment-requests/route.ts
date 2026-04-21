@@ -10,6 +10,8 @@ import {
 import {
   containsBadWords,
   isValidEmail,
+  isValidPhone,
+  normalizePhone,
   MAX_NOTE_LENGTH,
 } from '@/lib/validation';
 import { sendNewRequestEmail, sendNewRequestRegisteredEmail } from '@/lib/email';
@@ -25,20 +27,38 @@ export async function POST(request: NextRequest) {
     return badRequest('MISSING_FIELD', 'Request body must be valid JSON.');
   }
 
-  const { recipient_email, amount, note } = body as {
+  const { recipient_email, recipient_phone, amount, note } = body as {
     recipient_email?: string;
+    recipient_phone?: string;
     amount?: number;
     note?: string | null;
   };
 
   const details: ApiErrorDetail[] = [];
 
-  if (!recipient_email) {
-    details.push({ field: 'recipient_email', issue: 'required' });
-  } else if (!isValidEmail(recipient_email)) {
-    details.push({ field: 'recipient_email', issue: 'invalid email format' });
-  } else if (recipient_email === user.email) {
-    details.push({ field: 'recipient_email', issue: 'cannot request money from yourself' });
+  // Normalize: contact can be email OR phone. Store in recipient_email column
+  // (the "contact identifier" column — phone auto-link at signup is not supported).
+  let contact: string | undefined;
+  let contactField: 'recipient_email' | 'recipient_phone' = 'recipient_email';
+
+  if (recipient_phone) {
+    contactField = 'recipient_phone';
+    const normalized = normalizePhone(recipient_phone);
+    if (!isValidPhone(normalized)) {
+      details.push({ field: 'recipient_phone', issue: 'invalid phone number' });
+    } else {
+      contact = normalized;
+    }
+  } else if (recipient_email) {
+    if (!isValidEmail(recipient_email)) {
+      details.push({ field: 'recipient_email', issue: 'invalid email format' });
+    } else if (recipient_email === user.email) {
+      details.push({ field: 'recipient_email', issue: 'cannot request money from yourself' });
+    } else {
+      contact = recipient_email;
+    }
+  } else {
+    details.push({ field: 'recipient_email', issue: 'email or phone required' });
   }
 
   if (amount === undefined || amount === null) {
@@ -76,11 +96,11 @@ export async function POST(request: NextRequest) {
   const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   let recipient_id: string | null = null;
-  if (recipient_email !== user.email) {
+  if (contactField === 'recipient_email' && contact !== user.email) {
     const { data: recipient } = await supabase
       .from('users')
       .select('id')
-      .eq('email', recipient_email!)
+      .eq('email', contact!)
       .single();
 
     if (recipient) recipient_id = recipient.id;
@@ -91,7 +111,7 @@ export async function POST(request: NextRequest) {
     .insert({
       sender_id: user.id,
       recipient_id,
-      recipient_email,
+      recipient_email: contact!,
       amount: Math.round(amount! * 100),
       status: 1,
       expires_at,
@@ -102,24 +122,27 @@ export async function POST(request: NextRequest) {
 
   if (error) return internalError(error.message);
 
-  // Fire-and-forget email — failure must not block the response
-  ;(async () => {
-    const { data: senderProfile } = await supabase
-      .from('users').select('first_name, last_name').eq('id', user.id).single();
-    const senderName = senderProfile
-      ? `${senderProfile.first_name} ${senderProfile.last_name}` : user.email!;
-    const amountCents = Math.round(amount! * 100);
+  // Fire-and-forget email — failure must not block the response.
+  // Only dispatch email for email contacts; phone contacts skip notification.
+  if (contactField === 'recipient_email') {
+    ;(async () => {
+      const { data: senderProfile } = await supabase
+        .from('users').select('first_name, last_name').eq('id', user.id).single();
+      const senderName = senderProfile
+        ? `${senderProfile.first_name} ${senderProfile.last_name}` : user.email!;
+      const amountCents = Math.round(amount! * 100);
 
-    if (!recipient_id) {
-      await sendNewRequestEmail({ recipientEmail: recipient_email!, senderName, amount: amountCents, note: note || null, requestId: data.id });
-    } else {
-      const { data: recipientProfile } = await supabase
-        .from('users').select('email').eq('id', recipient_id).single();
-      if (recipientProfile?.email) {
-        await sendNewRequestRegisteredEmail({ recipientEmail: recipientProfile.email, senderName, amount: amountCents, note: note || null, requestId: data.id });
+      if (!recipient_id) {
+        await sendNewRequestEmail({ recipientEmail: contact!, senderName, amount: amountCents, note: note || null, requestId: data.id });
+      } else {
+        const { data: recipientProfile } = await supabase
+          .from('users').select('email').eq('id', recipient_id).single();
+        if (recipientProfile?.email) {
+          await sendNewRequestRegisteredEmail({ recipientEmail: recipientProfile.email, senderName, amount: amountCents, note: note || null, requestId: data.id });
+        }
       }
-    }
-  })().catch(() => {});
+    })().catch(() => {});
+  }
 
   return NextResponse.json(data, { status: 201 });
 }
