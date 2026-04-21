@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -12,7 +13,10 @@ const DEMO_ACCOUNTS = [
 ];
 const DEMO_PASSWORD = '123';
 
-export default function LoginPage() {
+function LoginInner() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +30,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) { setMessage({ kind: 'err', text: error.message }); return; }
-      window.location.href = '/';
+      window.location.href = redirectTo;
     } finally {
       setLoading(false);
     }
@@ -39,7 +43,7 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}` },
       });
       if (error) setMessage({ kind: 'err', text: error.message });
       else setMessage({ kind: 'ok', text: 'Magic link sent — check your inbox.' });
@@ -57,7 +61,7 @@ export default function LoginPage() {
         setMessage({ kind: 'err', text: `${error.message}. Try magic link with ${demoEmail}.` });
         return;
       }
-      window.location.href = '/';
+      window.location.href = redirectTo;
     } finally {
       setLoading(false);
     }
@@ -163,12 +167,20 @@ export default function LoginPage() {
 
           <div style={{ marginTop: '2rem', fontSize: '0.875rem', color: 'var(--color-muted)' }}>
             Don&apos;t have an account?{' '}
-            <Link href="/auth/signup" style={{ color: 'var(--color-brand)' }} className="hover:underline">
+            <Link href={`/auth/signup${redirectTo !== '/' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: 'var(--color-brand)' }} className="hover:underline">
               Create one
             </Link>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

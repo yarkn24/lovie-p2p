@@ -44,8 +44,8 @@ export default function RequestShare() {
           </p>
         )}
         <div className="flex gap-3 mt-6 justify-center">
-          <Link href="/auth/login" className="btn-brand">Sign in</Link>
-          <Link href="/auth/signup" className="btn-ghost">Create account</Link>
+          <Link href={`/auth/login?redirect=/requests/${id}`} className="btn-brand">Sign in</Link>
+          <Link href={`/auth/signup?redirect=/requests/${id}`} className="btn-ghost">Create account</Link>
         </div>
       </div>
     </div>
