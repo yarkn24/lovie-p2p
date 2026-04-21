@@ -220,7 +220,13 @@ export default function Dashboard() {
               backgroundSize: '220% 220%',
               animation: 'balance-shift 18s ease-in-out infinite',
               color: 'white',
+              position: 'relative',
             }}>
+            <span style={{
+              position: 'absolute', bottom: '1rem', right: '1.25rem',
+              fontFamily: "'Kaushan Script', cursive",
+              fontSize: '1.6rem', opacity: 0.35, pointerEvents: 'none', userSelect: 'none',
+            }}>Lovie</span>
             <div style={{ fontSize: '0.75rem', opacity: 0.75, marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
               Available balance
             </div>
