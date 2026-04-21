@@ -51,6 +51,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState<'incoming' | 'outgoing'>('incoming');
   const [filter, setFilter] = useState<'all' | 'pending' | 'scheduled' | 'paid' | 'declined' | 'expired' | 'cancelled' | 'failed'>('all');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc' | 'name-asc' | 'status'>('date-desc');
   const [loading, setLoading] = useState(true);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjusting, setAdjusting] = useState(false);
@@ -170,6 +171,11 @@ export default function Dashboard() {
   }, [tab, me]);
 
   const filtered = useMemo(() => {
+    const counterpartyName = (r: PaymentRequest) =>
+      tab === 'incoming'
+        ? `${r.sender?.first_name ?? ''} ${r.sender?.last_name ?? ''}`.trim()
+        : `${r.recipient?.first_name ?? ''} ${r.recipient?.last_name ?? ''}`.trim() || r.recipient_email;
+
     return requests
       .filter((r) => {
         if (filter === 'pending') return r.status === 1;
@@ -184,14 +190,17 @@ export default function Dashboard() {
       .filter((r) => {
         if (!search) return true;
         const q = search.toLowerCase();
-        const counterparty =
-          tab === 'incoming'
-            ? `${r.sender?.first_name ?? ''} ${r.sender?.last_name ?? ''} ${r.sender?.email ?? ''}`
-            : `${r.recipient?.first_name ?? ''} ${r.recipient?.last_name ?? ''} ${r.recipient_email}`;
-        return (
-          counterparty.toLowerCase().includes(q) ||
-          (r.note ?? '').toLowerCase().includes(q)
-        );
+        const cp = `${counterpartyName(r)} ${tab === 'incoming' ? r.sender?.email ?? '' : r.recipient_email}`;
+        return cp.toLowerCase().includes(q) || (r.note ?? '').toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
+        if (sort === 'date-desc') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (sort === 'date-asc')  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        if (sort === 'amount-desc') return b.amount - a.amount;
+        if (sort === 'amount-asc')  return a.amount - b.amount;
+        if (sort === 'name-asc') return counterpartyName(a).localeCompare(counterpartyName(b));
+        if (sort === 'status') return a.status - b.status;
+        return 0;
       });
   }, [requests, filter, search, tab]);
 
@@ -305,6 +314,18 @@ export default function Dashboard() {
                 <option value="expired">Expired</option>
                 <option value="cancelled">Cancelled</option>
                 <option value="failed">Failed</option>
+              </select>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+                className="text-sm px-3 py-1.5 rounded-[var(--radius-lovie)] border border-[var(--color-line)] bg-white"
+              >
+                <option value="date-desc">Date ↓</option>
+                <option value="date-asc">Date ↑</option>
+                <option value="amount-desc">Amount ↓</option>
+                <option value="amount-asc">Amount ↑</option>
+                <option value="name-asc">Name A–Z</option>
+                <option value="status">Status</option>
               </select>
               <input
                 placeholder="Search name or note…"
