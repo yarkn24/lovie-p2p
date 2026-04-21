@@ -10,6 +10,12 @@ implemented with Claude Code, deployed on Vercel + Supabase.
 - **Live demo**: https://lovie-p2p-gules.vercel.app
 - **Spec**: [`.specify/specs/p2p-payment-requests/spec.md`](../.specify/specs/p2p-payment-requests/spec.md)
 
+> **Note on emails:** notifications are sent via the Resend sandbox address
+> `onboarding@resend.dev` (no verified production domain for this demo). Gmail
+> and Outlook frequently route sandbox-origin mail to **spam** — if you don't see
+> a notification during review, check the spam folder. All email content is
+> HTML-escaped at the template layer to prevent injection.
+
 ---
 
 ## Demo accounts
@@ -29,7 +35,9 @@ path end-to-end.
 
 ## Feature list
 
-- Create payment request (email, amount in cents, optional note, bad-words filter, 500-char cap)
+- Create payment request (email required, phone optional, amount in cents with 2-decimal precision + $10k cap, optional note with bad-words filter + 500-char cap)
+- Rate limit: 20 payment requests per sender per hour
+- Self-request block; recipient email cannot equal sender email
 - Incoming / outgoing dashboard with status filter + name/note search
 - Request detail view with role-aware actions
 - **Recipient** actions: Pay now · Decline · Schedule for a future date
@@ -44,7 +52,7 @@ path end-to-end.
 
 - **Next.js 16** (App Router, Turbopack, React 19)
 - **TypeScript strict**, Tailwind CSS v4, Instrument Sans
-- **Supabase** Postgres + Auth + RLS + RPC (`execute_payment`, `execute_scheduled_payments`, `repeat_payment_request`, `expire_pending_requests`)
+- **Supabase** Postgres + Auth + RLS + RPC (`execute_payment_v2` for atomic pay, `execute_scheduled_payments`, `repeat_payment_request`, `expire_pending_requests`, `expire_single_request`) + immutability trigger blocking column tampering (amount/sender/created_at/note/recipient_email)
 - Vercel cron for scheduled + expiry jobs
 - Built with Claude Code (spec-driven, `/specify → /plan → /tasks → implement`)
 
@@ -86,8 +94,16 @@ Safe to re-run. Wipes existing demo payment rows and re-creates 30 requests.
 
 ## E2E tests
 
-Not yet included — this submission covers everything up to the E2E / automated
-screen-recording step (which is the next branch of work).
+Playwright is wired up but the test suite is still a work in progress.
+
+```bash
+npm install            # installs @playwright/test
+npx playwright install # browsers (first run only)
+npx playwright test    # runs specs in tests/
+```
+
+`playwright.config.ts` has `use: { video: 'on' }` so recordings land in
+`playwright-report/` and `test-results/` when specs run.
 
 ## Project structure
 
@@ -103,7 +119,7 @@ app/
 │   ├── validation.ts    # Email, bad-words, note length
 │   └── supabase/        # server, client, admin (service-role)
 ├── scripts/seed.mjs     # Demo users + mock payments
-├── supabase/migrations/ # 4 migrations (schema, rpcs, failure_reason, profile-read RLS)
+├── supabase/migrations/ # 10 migrations (schema, RPCs, failure_reason, RLS fixes, profile-read RLS, phone columns, column-immutability trigger, atomic payment RPC)
 └── vercel.json          # Cron schedules
 ```
 

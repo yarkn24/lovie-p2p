@@ -22,6 +22,22 @@ export async function POST(request: NextRequest) {
 
   if (!user) return unauthorized();
 
+  // Rate limit: max 20 requests per user per hour. Cheap COUNT against RLS-scoped
+  // sender_id. Not distributed-safe for bursty concurrent creates, but adequate
+  // for preventing email-spam amplification from a single compromised account.
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: recentCount } = await supabase
+    .from('payment_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_id', user.id)
+    .gte('created_at', oneHourAgo);
+  if ((recentCount ?? 0) >= 20) {
+    return badRequest(
+      'RATE_LIMITED',
+      'You have hit the hourly limit of 20 payment requests. Try again later.'
+    );
+  }
+
   const body = await request.json().catch(() => null);
   if (!body) {
     return badRequest('MISSING_FIELD', 'Request body must be valid JSON.');
@@ -96,11 +112,12 @@ export async function POST(request: NextRequest) {
   const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   let recipient_id: string | null = null;
-  const { data: recipient } = await supabase
+  const admin = createAdminClient();
+  const { data: recipient } = await admin
     .from('users')
     .select('id')
     .eq('email', recipient_email!)
-    .single();
+    .maybeSingle();
   if (recipient) recipient_id = recipient.id;
 
   const insertPayload: Record<string, unknown> = {
@@ -126,7 +143,7 @@ export async function POST(request: NextRequest) {
 
   // Fire-and-forget email — failure must not block the response
   ;(async () => {
-    const { data: senderProfile } = await supabase
+    const { data: senderProfile } = await admin
       .from('users').select('first_name, last_name').eq('id', user.id).single();
     const senderName = senderProfile
       ? `${senderProfile.first_name} ${senderProfile.last_name}` : user.email!;
@@ -135,13 +152,13 @@ export async function POST(request: NextRequest) {
     if (!recipient_id) {
       await sendNewRequestEmail({ recipientEmail: recipient_email!, senderName, amount: amountCents, note: note || null, requestId: data.id });
     } else {
-      const { data: recipientProfile } = await supabase
+      const { data: recipientProfile } = await admin
         .from('users').select('email').eq('id', recipient_id).single();
       if (recipientProfile?.email) {
         await sendNewRequestRegisteredEmail({ recipientEmail: recipientProfile.email, senderName, amount: amountCents, note: note || null, requestId: data.id });
       }
     }
-  })().catch(() => {});
+  })().catch((err) => console.error("[email] fire-and-forget failed", err));
 
   return NextResponse.json(data, { status: 201 });
 }

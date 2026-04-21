@@ -48,8 +48,9 @@ export async function POST(
     );
   }
 
-  const admin = createAdminClient();
-  const { data: updated, error: updateError } = await admin
+  // RLS policy "Recipients can decline" allows this with status=3 + recipient check,
+  // so defense-in-depth: use user-scoped client for the UPDATE.
+  const { data: updated, error: updateError } = await supabase
     .from('payment_requests')
     .update({ status: 3, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -58,9 +59,14 @@ export async function POST(
 
   if (updateError) return internalError(updateError.message);
 
+  const admin = createAdminClient();
   ;(async () => {
-    const { data: sender } = await supabase.from('users').select('email').eq('id', paymentReq.sender_id).single();
-    const { data: decliner } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    const { data: profiles } = await admin
+      .from('users')
+      .select('id, email, first_name, last_name')
+      .in('id', [paymentReq.sender_id, user.id]);
+    const sender = profiles?.find((p) => p.id === paymentReq.sender_id);
+    const decliner = profiles?.find((p) => p.id === user.id);
     if (sender?.email && decliner) {
       await sendRequestDeclinedEmail({
         senderEmail: sender.email,
@@ -69,7 +75,7 @@ export async function POST(
         requestId: id,
       });
     }
-  })().catch(() => {});
+  })().catch((err) => console.error("[email] fire-and-forget failed", err));
 
   return NextResponse.json(updated);
 }
