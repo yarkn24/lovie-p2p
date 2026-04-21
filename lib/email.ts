@@ -148,6 +148,7 @@ export async function sendNewRequestEmail(args: {
   const expiryLabel = new Date(args.expiresAt).toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+    timeZone: 'America/Chicago',
   });
   const html = shell('#06b6d4', 'Action Required', `${safeSender} sent you a payment request`, `
     ${body(`<strong style="color:#0a0f1e;">${safeSender}</strong> is requesting money from you via Lovie. Create a free account to pay, decline, or schedule.`)}
