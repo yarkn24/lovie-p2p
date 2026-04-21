@@ -217,7 +217,9 @@ export default function RequestDetail() {
                 To (payer)
               </div>
               <div className="mt-1 font-medium">{recipientName}</div>
-              <div className="text-sm text-[var(--color-muted)]">{req.recipient_email}</div>
+              {recipientName !== req.recipient_email && (
+                <div className="text-sm text-[var(--color-muted)]">{req.recipient_email}</div>
+              )}
             </div>
             <div>
               <div className="text-xs uppercase tracking-wide text-[var(--color-muted)] font-semibold">

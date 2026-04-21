@@ -113,21 +113,20 @@ export default function NewRequest() {
 
             <div>
               <label className="text-xs font-medium text-[var(--color-ink-3)]">Amount (USD)</label>
-              <div className="relative mt-1">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] pointer-events-none select-none">$</span>
+              <div className="flex mt-1 rounded-[var(--radius-lovie)] border border-[var(--color-line)] focus-within:border-[var(--color-brand)] focus-within:ring-1 focus-within:ring-[var(--color-brand)] overflow-hidden">
+                <span className="flex items-center px-3 bg-[var(--color-bg-2)] text-[var(--color-muted)] text-sm select-none border-r border-[var(--color-line)]">$</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={form.amount}
                   onChange={(e) => {
                     const v = e.target.value;
-                    // Allow empty, or digits with at most one decimal point and max 2 fractional digits
                     if (v === '' || /^\d*(\.\d{0,2})?$/.test(v)) {
                       setForm({ ...form, amount: v });
                     }
                   }}
                   placeholder="0.00"
-                  className="input pl-9"
+                  className="flex-1 px-3 py-2.5 text-sm outline-none bg-white"
                   required
                 />
               </div>
