@@ -114,15 +114,20 @@ export default function NewRequest() {
             <div>
               <label className="text-xs font-medium text-[var(--color-ink-3)]">Amount (USD)</label>
               <div className="relative mt-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] pointer-events-none select-none">$</span>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
+                  type="text"
+                  inputMode="decimal"
                   value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // Allow empty, or digits with at most one decimal point and max 2 fractional digits
+                    if (v === '' || /^\d*(\.\d{0,2})?$/.test(v)) {
+                      setForm({ ...form, amount: v });
+                    }
+                  }}
                   placeholder="0.00"
-                  className="input pl-7"
+                  className="input pl-9"
                   required
                 />
               </div>
