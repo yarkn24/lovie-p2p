@@ -54,7 +54,77 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjusting, setAdjusting] = useState(false);
+  const [confirmState, setConfirmState] = useState<
+    | { action: 'pay' | 'decline' | 'schedule'; req: PaymentRequest; scheduleDate: string; dontAsk: boolean }
+    | null
+  >(null);
+  const [rowBusy, setRowBusy] = useState<string | null>(null);
   const router = useRouter();
+
+  const skipKey = (action: 'pay' | 'decline' | 'schedule') => `confirm-skip-${action}`;
+  const isSkipped = (action: 'pay' | 'decline' | 'schedule') => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(skipKey(action)) === '1';
+  };
+
+  const runAction = async (
+    action: 'pay' | 'decline' | 'schedule',
+    req: PaymentRequest,
+    scheduledDate?: string
+  ) => {
+    setRowBusy(req.id);
+    try {
+      const body =
+        action === 'schedule' && scheduledDate
+          ? JSON.stringify({ scheduled_payment_date: new Date(scheduledDate).toISOString() })
+          : undefined;
+      const res = await fetch(`/api/payment-requests/${req.id}/${action}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        body,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        alert(err?.error?.message ?? `Failed to ${action}.`);
+        return;
+      }
+      const list = await fetch(`/api/payment-requests?direction=${tab}`, { credentials: 'include' });
+      setRequests(await list.json());
+      const meRes = await fetch('/api/auth/user', { credentials: 'include' });
+      if (meRes.ok) setMe(await meRes.json());
+    } finally {
+      setRowBusy(null);
+    }
+  };
+
+  const handleInlineAction = (
+    action: 'pay' | 'decline' | 'schedule',
+    req: PaymentRequest,
+    e: React.MouseEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (action !== 'schedule' && isSkipped(action)) {
+      runAction(action, req);
+      return;
+    }
+    setConfirmState({ action, req, scheduleDate: '', dontAsk: false });
+  };
+
+  const confirmAndRun = async () => {
+    if (!confirmState) return;
+    const { action, req, scheduleDate, dontAsk } = confirmState;
+    if (action === 'schedule' && !scheduleDate) {
+      alert('Please pick a date.');
+      return;
+    }
+    if (dontAsk && action !== 'schedule') {
+      localStorage.setItem(skipKey(action), '1');
+    }
+    setConfirmState(null);
+    await runAction(action, req, scheduleDate);
+  };
 
   const adjustBalance = async (action: 'add' | 'subtract') => {
     const amount = Number(adjustAmount);
@@ -290,6 +360,31 @@ export default function Dashboard() {
                           <span className={`chip ${s.chip}`}>{s.label}</span>
                         </div>
                       </div>
+                      {tab === 'incoming' && r.status === 1 && (
+                        <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                          <button
+                            onClick={(e) => handleInlineAction('pay', r, e)}
+                            disabled={rowBusy === r.id}
+                            className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] text-white hover:opacity-90 disabled:opacity-40"
+                          >
+                            Pay
+                          </button>
+                          <button
+                            onClick={(e) => handleInlineAction('schedule', r, e)}
+                            disabled={rowBusy === r.id}
+                            className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                          >
+                            Schedule
+                          </button>
+                          <button
+                            onClick={(e) => handleInlineAction('decline', r, e)}
+                            disabled={rowBusy === r.id}
+                            className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      )}
                     </Link>
                   </li>
                 );
@@ -298,6 +393,84 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {confirmState && (
+        <div
+          onClick={() => setConfirmState(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'grid', placeItems: 'center', zIndex: 50, padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card"
+            style={{ background: 'white', maxWidth: '24rem', width: '100%', padding: '1.5rem' }}
+          >
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+              {confirmState.action === 'pay' && 'Pay this request?'}
+              {confirmState.action === 'decline' && 'Decline this request?'}
+              {confirmState.action === 'schedule' && 'Schedule payment'}
+            </div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '1rem' }}>
+              {confirmState.action === 'pay' &&
+                `You're about to send ${fmtUSD(confirmState.req.amount)} to ${
+                  confirmState.req.sender
+                    ? `${confirmState.req.sender.first_name} ${confirmState.req.sender.last_name}`
+                    : 'the sender'
+                }.`}
+              {confirmState.action === 'decline' &&
+                `Decline the ${fmtUSD(confirmState.req.amount)} request? The sender will be notified.`}
+              {confirmState.action === 'schedule' &&
+                `Pick a future date (on or before ${fmtDate(confirmState.req.expires_at)}) to automatically pay ${fmtUSD(confirmState.req.amount)}.`}
+            </div>
+
+            {confirmState.action === 'schedule' && (
+              <input
+                type="date"
+                value={confirmState.scheduleDate}
+                min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+                max={confirmState.req.expires_at.slice(0, 10)}
+                onChange={(e) =>
+                  setConfirmState((s) => (s ? { ...s, scheduleDate: e.target.value } : s))
+                }
+                className="w-full text-sm px-3 py-2 rounded-md border border-[var(--color-line)] bg-white"
+                style={{ marginBottom: '0.75rem' }}
+              />
+            )}
+
+            {confirmState.action !== 'schedule' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--color-muted)', marginBottom: '1rem' }}>
+                <input
+                  type="checkbox"
+                  checked={confirmState.dontAsk}
+                  onChange={(e) =>
+                    setConfirmState((s) => (s ? { ...s, dontAsk: e.target.checked } : s))
+                  }
+                />
+                Don&apos;t show this message again
+              </label>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmState(null)}
+                className="px-3 py-1.5 text-sm rounded-md border border-[var(--color-line)] bg-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAndRun}
+                className="px-3 py-1.5 text-sm rounded-md bg-[var(--color-ink)] text-white"
+              >
+                {confirmState.action === 'pay' && 'Pay now'}
+                {confirmState.action === 'decline' && 'Decline'}
+                {confirmState.action === 'schedule' && 'Schedule'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }
