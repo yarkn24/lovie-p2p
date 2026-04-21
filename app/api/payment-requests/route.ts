@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     const amountCents = Math.round(amount! * 100);
 
     if (!recipient_id) {
-      await sendNewRequestEmail({ recipientEmail: recipient_email!, senderName, amount: amountCents, note: note || null, requestId: data.id });
+      await sendNewRequestEmail({ recipientEmail: recipient_email!, senderName, amount: amountCents, note: note || null, requestId: data.id, expiresAt: data.expires_at });
     } else {
       const { data: recipientProfile } = await admin
         .from('users').select('email').eq('id', recipient_id).single();

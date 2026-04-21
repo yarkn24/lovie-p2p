@@ -141,16 +141,21 @@ export async function sendNewRequestEmail(args: {
   amount: number;
   note: string | null;
   requestId: string;
+  expiresAt: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}/share?e=${encodeURIComponent(args.recipientEmail)}`;
   const safeSender = esc(args.senderName);
+  const expiryLabel = new Date(args.expiresAt).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  });
   const html = shell('#06b6d4', 'Action Required', `${safeSender} sent you a payment request`, `
     ${body(`<strong style="color:#0a0f1e;">${safeSender}</strong> is requesting money from you via Lovie. Create a free account to pay, decline, or schedule.`)}
     ${amountHero(args.amount, 'amount requested')}
     ${noteQuote(args.note)}
     ${metaTable(
       metaRow('From', safeSender) +
-      metaRow('Expires', '7 days')
+      metaRow('Expires', esc(expiryLabel))
     )}
     ${cta(url, 'View & respond to request')}
   `);
