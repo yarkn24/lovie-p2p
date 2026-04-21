@@ -16,8 +16,9 @@ const DEMO_PASSWORD = '123';
 function LoginInner() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
+  const pinnedEmail = searchParams.get('email') || '';
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(pinnedEmail);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);

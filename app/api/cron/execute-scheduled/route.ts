@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
             requestId: req.id,
           });
         }
-      })().catch(() => {});
+      })().catch((err) => console.error("[email] fire-and-forget failed", err));
     }
   }
 

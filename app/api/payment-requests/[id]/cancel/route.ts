@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendRequestCancelledEmail } from '@/lib/email';
 import {
@@ -44,8 +43,9 @@ export async function POST(
     );
   }
 
-  const admin = createAdminClient();
-  const { data: updated, error: updateError } = await admin
+  // RLS policy "Senders can cancel" allows this with status=6 + sender check,
+  // so defense-in-depth: use user-scoped client for the UPDATE.
+  const { data: updated, error: updateError } = await supabase
     .from('payment_requests')
     .update({ status: 6, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -63,7 +63,7 @@ export async function POST(
         amount: paymentReq.amount,
       });
     }
-  })().catch(() => {});
+  })().catch((err) => console.error("[email] fire-and-forget failed", err));
 
   return NextResponse.json(updated);
 }

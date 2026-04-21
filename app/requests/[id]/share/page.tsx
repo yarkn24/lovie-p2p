@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function RequestShare() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const pinnedEmail = searchParams.get('e') || '';
   const router = useRouter();
   const [state, setState] = useState<'loading' | 'anon' | 'redirect' | 'error'>('loading');
   const [error, setError] = useState('');
@@ -29,6 +31,11 @@ export default function RequestShare() {
     return <div className="min-h-screen grid place-items-center text-sm text-[var(--color-muted)]">Loading…</div>;
   }
 
+  const emailParam = pinnedEmail ? `&email=${encodeURIComponent(pinnedEmail)}` : '';
+  const redirectParam = `redirect=${encodeURIComponent(`/requests/${id}`)}`;
+  const loginHref = `/auth/login?${redirectParam}${emailParam}`;
+  const signupHref = `/auth/signup?${redirectParam}${emailParam}`;
+
   return (
     <div className="min-h-screen grid place-items-center px-6">
       <div className="card w-full max-w-md p-8 text-center">
@@ -39,13 +46,20 @@ export default function RequestShare() {
         {error ? (
           <p className="text-sm text-red-600 mt-2">{error}</p>
         ) : (
-          <p className="text-sm text-[var(--color-muted)] mt-2">
-            Sign in to view the details and pay, decline, or schedule.
-          </p>
+          <>
+            <p className="text-sm text-[var(--color-muted)] mt-2">
+              Sign in to view the details and pay, decline, or schedule.
+            </p>
+            {pinnedEmail && (
+              <p className="text-xs text-[var(--color-muted)] mt-3">
+                Sent to <span className="font-medium text-[var(--color-ink)]">{pinnedEmail}</span>
+              </p>
+            )}
+          </>
         )}
         <div className="flex gap-3 mt-6 justify-center">
-          <Link href={`/auth/login?redirect=/requests/${id}`} className="btn-brand">Sign in</Link>
-          <Link href={`/auth/signup?redirect=/requests/${id}`} className="btn-ghost">Create account</Link>
+          <Link href={loginHref} className="btn-brand">Sign in</Link>
+          <Link href={signupHref} className="btn-ghost">Create account</Link>
         </div>
       </div>
     </div>

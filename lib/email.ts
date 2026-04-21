@@ -15,6 +15,16 @@ function getResend() {
 const fmtUSD = (c: number) =>
   (c / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
+function esc(s: string | null | undefined): string {
+  if (s == null) return '';
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const LOGO_IMG = `<img src="${BASE_URL}/lovie-logo.png" width="36" height="36" alt="Lovie" style="display:inline-block;vertical-align:middle;margin-right:10px;" />`;
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -88,7 +98,7 @@ function amountHero(amount: number, sub: string, gradient = 'linear-gradient(135
 
 function noteQuote(note: string | null) {
   if (!note) return '';
-  return `<p style="margin:16px 0;padding:12px 16px;border-left:3px solid #2563eb;color:#475569;font-size:14px;font-style:italic;background:#f8fafc;border-radius:0 6px 6px 0;">"${note}"</p>`;
+  return `<p style="margin:16px 0;padding:12px 16px;border-left:3px solid #2563eb;color:#475569;font-size:14px;font-style:italic;background:#f8fafc;border-radius:0 6px 6px 0;">"${esc(note)}"</p>`;
 }
 
 function cta(href: string, label: string) {
@@ -111,8 +121,16 @@ function body(text: string) {
 }
 
 async function send(to: string, subject: string, html: string) {
-  const { error } = await getResend().emails.send({ from: FROM, to, subject, html });
-  if (error) throw new Error(`Email send failed: ${error.message}`);
+  try {
+    const { error } = await getResend().emails.send({ from: FROM, to, subject, html });
+    if (error) {
+      console.error('[email] delivery failed', { to, subject, error: error.message });
+      throw new Error(`Email send failed: ${error.message}`);
+    }
+  } catch (err) {
+    console.error('[email] send threw', { to, subject, err: err instanceof Error ? err.message : err });
+    throw err;
+  }
 }
 
 // ─── 1. New request — unregistered recipient ─────────────────────────────────
@@ -124,13 +142,14 @@ export async function sendNewRequestEmail(args: {
   note: string | null;
   requestId: string;
 }) {
-  const url = `${BASE_URL}/requests/${args.requestId}/share`;
-  const html = shell('#06b6d4', 'Action Required', `${args.senderName} sent you a payment request`, `
-    ${body(`<strong style="color:#0a0f1e;">${args.senderName}</strong> is requesting money from you via Lovie. Create a free account to pay, decline, or schedule.`)}
+  const url = `${BASE_URL}/requests/${args.requestId}/share?e=${encodeURIComponent(args.recipientEmail)}`;
+  const safeSender = esc(args.senderName);
+  const html = shell('#06b6d4', 'Action Required', `${safeSender} sent you a payment request`, `
+    ${body(`<strong style="color:#0a0f1e;">${safeSender}</strong> is requesting money from you via Lovie. Create a free account to pay, decline, or schedule.`)}
     ${amountHero(args.amount, 'amount requested')}
     ${noteQuote(args.note)}
     ${metaTable(
-      metaRow('From', args.senderName) +
+      metaRow('From', safeSender) +
       metaRow('Expires', '7 days') +
       metaRow('Account', 'Sign up free on Lovie')
     )}
@@ -149,12 +168,13 @@ export async function sendNewRequestRegisteredEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
-  const html = shell('#06b6d4', 'Action Required', `${args.senderName} sent you a payment request`, `
-    ${body(`<strong style="color:#0a0f1e;">${args.senderName}</strong> sent you a payment request on Lovie. Pay now, decline, or schedule a future payment.`)}
+  const safeSender = esc(args.senderName);
+  const html = shell('#06b6d4', 'Action Required', `${safeSender} sent you a payment request`, `
+    ${body(`<strong style="color:#0a0f1e;">${safeSender}</strong> sent you a payment request on Lovie. Pay now, decline, or schedule a future payment.`)}
     ${amountHero(args.amount, 'amount requested')}
     ${noteQuote(args.note)}
     ${metaTable(
-      metaRow('From', args.senderName) +
+      metaRow('From', safeSender) +
       metaRow('Expires', '7 days from now')
     )}
     ${cta(url, 'Pay, decline or schedule')}
@@ -171,11 +191,12 @@ export async function sendPaymentReceivedEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
+  const safePayer = esc(args.payerName);
   const html = shell('#10b981', 'Paid', `You received ${fmtUSD(args.amount)}`, `
-    ${body(`<strong style="color:#0a0f1e;">${args.payerName}</strong> paid your request. The amount has been added to your Lovie balance.`)}
+    ${body(`<strong style="color:#0a0f1e;">${safePayer}</strong> paid your request. The amount has been added to your Lovie balance.`)}
     ${amountHero(args.amount, 'received · balance updated', 'linear-gradient(135deg,#059669,#10b981)')}
     ${metaTable(
-      metaRow('Paid by', args.payerName) +
+      metaRow('Paid by', safePayer) +
       metaRow('Status', 'Paid — balance updated')
     )}
     ${cta(url, 'View transaction')}
@@ -192,11 +213,12 @@ export async function sendRequestDeclinedEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
-  const html = shell('#f43f5e', 'Declined', `${args.recipientName} declined your request`, `
-    ${body(`<strong style="color:#0a0f1e;">${args.recipientName}</strong> declined your payment request. You can send a new request once from the request detail page.`)}
+  const safeRecipient = esc(args.recipientName);
+  const html = shell('#f43f5e', 'Declined', `${safeRecipient} declined your request`, `
+    ${body(`<strong style="color:#0a0f1e;">${safeRecipient}</strong> declined your payment request. You can send a new request once from the request detail page.`)}
     ${amountHero(args.amount, 'declined', 'linear-gradient(135deg,#e11d48,#f43f5e)')}
     ${metaTable(
-      metaRow('Declined by', args.recipientName) +
+      metaRow('Declined by', safeRecipient) +
       metaRow('Next step', 'Send a new request (one-time)')
     )}
     ${cta(url, 'View request')}
@@ -217,12 +239,13 @@ export async function sendPaymentScheduledEmail(args: {
   const dateStr = new Date(args.scheduledDate).toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });
+  const safePayer = esc(args.payerName);
   const html = shell('#2563eb', 'Scheduled', `Payment scheduled for ${fmtUSD(args.amount)}`, `
-    ${body(`<strong style="color:#0a0f1e;">${args.payerName}</strong> scheduled your payment. It will be processed automatically on the scheduled date.`)}
+    ${body(`<strong style="color:#0a0f1e;">${safePayer}</strong> scheduled your payment. It will be processed automatically on the scheduled date.`)}
     ${amountHero(args.amount, 'scheduled')}
     ${metaTable(
-      metaRow('Scheduled by', args.payerName) +
-      metaRow('Date', dateStr) +
+      metaRow('Scheduled by', safePayer) +
+      metaRow('Date', esc(dateStr)) +
       metaRow('Status', 'Will auto-process on schedule')
     )}
     ${cta(url, 'View request')}
@@ -237,10 +260,11 @@ export async function sendRequestCancelledEmail(args: {
   senderName: string;
   amount: number;
 }) {
-  const html = shell('#64748b', 'Cancelled', `${args.senderName} cancelled their request`, `
-    ${body(`<strong style="color:#0a0f1e;">${args.senderName}</strong> cancelled their payment request. No action is needed from you.`)}
+  const safeSender = esc(args.senderName);
+  const html = shell('#64748b', 'Cancelled', `${safeSender} cancelled their request`, `
+    ${body(`<strong style="color:#0a0f1e;">${safeSender}</strong> cancelled their payment request. No action is needed from you.`)}
     ${amountHero(args.amount, 'cancelled', 'linear-gradient(135deg,#475569,#64748b)')}
-    ${metaTable(metaRow('Cancelled by', args.senderName))}
+    ${metaTable(metaRow('Cancelled by', safeSender))}
   `);
   await send(args.recipientEmail, `${args.senderName} cancelled their ${fmtUSD(args.amount)} request`, html);
 }
@@ -254,12 +278,13 @@ export async function sendScheduledPaymentFailedEmail(args: {
   requestId: string;
 }) {
   const url = `${BASE_URL}/requests/${args.requestId}`;
+  const safeSender = esc(args.senderName);
   const html = shell('#f43f5e', 'Action Required', `Scheduled payment of ${fmtUSD(args.amount)} failed`, `
-    ${body(`Your scheduled payment to <strong style="color:#0a0f1e;">${args.senderName}</strong> couldn't be processed — your Lovie balance was insufficient. Please top up and retry.`)}
+    ${body(`Your scheduled payment to <strong style="color:#0a0f1e;">${safeSender}</strong> couldn't be processed — your Lovie balance was insufficient. Please top up and retry.`)}
     ${amountHero(args.amount, 'payment failed', 'linear-gradient(135deg,#e11d48,#f43f5e)')}
     ${metaTable(
       metaRow('Reason', 'Insufficient balance') +
-      metaRow('To', args.senderName) +
+      metaRow('To', safeSender) +
       metaRow('Next step', 'Top up balance, then retry or reschedule')
     )}
     ${cta(url, 'Retry or reschedule')}

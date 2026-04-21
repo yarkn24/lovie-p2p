@@ -58,69 +58,48 @@ export async function POST(
 
   const admin = createAdminClient();
 
-  // Check payer balance
-  const { data: payerProfile, error: balErr } = await admin
-    .from('users')
-    .select('balance')
-    .eq('id', user.id)
-    .single();
-
-  if (balErr || !payerProfile) return internalError('Could not fetch balance.');
-
-  if (payerProfile.balance < paymentReq.amount) {
-    return badRequest(
-      'INSUFFICIENT_BALANCE',
-      'Your balance is insufficient to complete this payment.'
-    );
-  }
-
-  // Deduct from payer
-  const { error: deductErr } = await admin
-    .from('users')
-    .update({ balance: payerProfile.balance - paymentReq.amount, updated_at: new Date().toISOString() })
-    .eq('id', user.id);
-
-  if (deductErr) return internalError(deductErr.message);
-
-  // Credit sender
-  const { data: senderProfile } = await admin
-    .from('users')
-    .select('balance')
-    .eq('id', paymentReq.sender_id)
-    .single();
-
-  if (senderProfile) {
-    await admin
-      .from('users')
-      .update({ balance: senderProfile.balance + paymentReq.amount, updated_at: new Date().toISOString() })
-      .eq('id', paymentReq.sender_id);
-  }
-
-  // Record transaction
-  await admin.from('payment_transactions').insert({
-    request_id: id,
-    from_user_id: user.id,
-    to_user_id: paymentReq.sender_id,
-    amount: paymentReq.amount,
-    transaction_type: 'manual_pay',
-    status: 'success',
-    paid_at: new Date().toISOString(),
+  // Atomic: deduct payer, credit sender, insert transaction, flip status.
+  // Runs in a single Postgres transaction inside execute_payment_v2 — partial
+  // failure states (money deducted but status unchanged, etc.) are impossible.
+  const { error: rpcErr } = await admin.rpc('execute_payment_v2', {
+    p_request_id: id,
+    p_payer_id: user.id,
   });
 
-  // Mark request as paid
-  const { data: updated, error: updateErr } = await admin
-    .from('payment_requests')
-    .update({ status: 2, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select()
-    .single();
+  if (rpcErr) {
+    const msg = rpcErr.message ?? '';
+    if (msg.includes('INSUFFICIENT_BALANCE')) {
+      return badRequest('INSUFFICIENT_BALANCE', 'Your balance is insufficient to complete this payment.');
+    }
+    if (msg.includes('INVALID_STATUS')) {
+      return conflict('INVALID_STATUS', 'Request is no longer pending.');
+    }
+    if (msg.includes('REQUEST_EXPIRED')) {
+      return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
+    }
+    if (msg.includes('REQUEST_NOT_FOUND')) {
+      return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
+    }
+    if (msg.includes('FORBIDDEN_NOT_RECIPIENT')) {
+      return forbidden('FORBIDDEN_NOT_RECIPIENT', 'Only the recipient can pay this request.');
+    }
+    return internalError(msg || 'Payment failed.');
+  }
 
-  if (updateErr) return internalError(updateErr.message);
+  const { data: updated } = await admin
+    .from('payment_requests')
+    .select('*')
+    .eq('id', id)
+    .single();
 
   // Notify sender (fire-and-forget)
   ;(async () => {
-    const { data: sender } = await admin.from('users').select('email, first_name, last_name').eq('id', paymentReq.sender_id).single();
-    const { data: payer } = await admin.from('users').select('first_name, last_name').eq('id', user.id).single();
+    const { data: profiles } = await admin
+      .from('users')
+      .select('id, email, first_name, last_name')
+      .in('id', [paymentReq.sender_id, user.id]);
+    const sender = profiles?.find((p) => p.id === paymentReq.sender_id);
+    const payer = profiles?.find((p) => p.id === user.id);
     if (sender?.email && payer) {
       await sendPaymentReceivedEmail({
         senderEmail: sender.email,
@@ -129,7 +108,7 @@ export async function POST(
         requestId: id,
       });
     }
-  })().catch(() => {});
+  })().catch((err) => console.error("[email] fire-and-forget failed", err));
 
   return NextResponse.json(updated);
 }

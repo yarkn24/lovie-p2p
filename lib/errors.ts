@@ -27,6 +27,7 @@ export type ApiErrorCode =
   | 'ALREADY_REPEATED'
   | 'INSUFFICIENT_BALANCE'
   | 'INVALID_SCHEDULE_DATE'
+  | 'RATE_LIMITED'
   | 'INTERNAL_ERROR';
 
 export type ApiErrorDetail = { field: string; issue: string };

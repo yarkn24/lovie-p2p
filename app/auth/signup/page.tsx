@@ -9,10 +9,11 @@ import { createClient } from '@/lib/supabase/client';
 function SignupForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
+  const pinnedEmail = searchParams.get('email') || '';
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(pinnedEmail);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -131,8 +132,21 @@ function SignupForm() {
             </div>
             <div>
               <label className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Email</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                className="input mt-1" placeholder="you@example.com" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                readOnly={!!pinnedEmail}
+                className="input mt-1"
+                placeholder="you@example.com"
+                style={pinnedEmail ? { background: 'var(--color-bg)', cursor: 'not-allowed' } : undefined}
+              />
+              {pinnedEmail && (
+                <p className="text-xs text-[var(--color-muted)] mt-1">
+                  This request was sent to this email — account must use it.
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium" style={{ color: 'var(--color-ink-3)' }}>Password</label>
