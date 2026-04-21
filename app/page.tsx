@@ -89,8 +89,12 @@ export default function Dashboard() {
         alert(err?.error?.message ?? `Failed to ${action}.`);
         return;
       }
-      const list = await fetch(`/api/payment-requests?direction=${tab}`, { credentials: 'include' });
-      setRequests(await list.json());
+      const newStatus = action === 'pay' ? 2 : action === 'decline' ? 3 : 5;
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === req.id ? { ...r, status: newStatus } : r
+        )
+      );
       const meRes = await fetch('/api/auth/user', { credentials: 'include' });
       if (meRes.ok) setMe(await meRes.json());
     } finally {
