@@ -150,8 +150,7 @@ export async function sendNewRequestEmail(args: {
     ${noteQuote(args.note)}
     ${metaTable(
       metaRow('From', safeSender) +
-      metaRow('Expires', '7 days') +
-      metaRow('Account', 'Sign up free on Lovie')
+      metaRow('Expires', '7 days')
     )}
     ${cta(url, 'View & respond to request')}
   `);
