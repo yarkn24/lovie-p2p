@@ -212,9 +212,9 @@ export default function Dashboard() {
           <div className="card md:col-span-2 p-6 border-transparent"
             style={{
               backgroundImage:
-                'linear-gradient(120deg, #0a1633 0%, #0b2455 22%, #0f3fbf 48%, #1e88ff 72%, #2fd8d0 100%)',
-              backgroundSize: '200% 200%',
-              animation: 'balance-shift 18s ease-in-out infinite',
+                'linear-gradient(125deg, #0c2461 0%, #1e3a8a 25%, #3b82f6 55%, #67e8f9 85%, #bbf7d0 100%)',
+              backgroundSize: '220% 220%',
+              animation: 'balance-shift 24s ease-in-out infinite',
               color: 'white',
             }}>
             <div style={{ fontSize: '0.75rem', opacity: 0.75, marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
