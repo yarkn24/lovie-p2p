@@ -2,11 +2,20 @@
 
 - Target: https://lovie-p2p-gules.vercel.app
 - Runner: Playwright 1.59.1 (chromium + Mobile Chrome / Pixel 5, 1 worker, fullyParallel=false)
-- Run date: 2026-04-22
+- Run date: 2026-04-23 (clean full-suite after CAS race fix)
+- **Latest full run**: **71 passed · 4 skipped (cron-dependent) · 0 failed** · 4m 54s
 - **Core suite**: 13/13 executable paths pass · 2/15 skipped by design (cron-dependent) · 1 bonus guardrail
-- **Extensive suite**: 35/35 pass across 7 new spec files (auth negatives, validation, authz, security, concurrency, API contract, responsive)
+- **Extensive suite**: 39/39 pass across 7 spec files (auth negatives, validation, authz, security, concurrency ×6, API contract, responsive)
 - Video: `video: 'on'` in config for `page`-fixture tests; manually-created contexts use `recordingContext()` helper ([fixtures.ts:10-18](fixtures.ts#L10-L18)).
-- **Drive (public)**: extensive-suite videos → https://drive.google.com/drive/folders/16bG4spJodfVzBeGS76KPIzssbEOsAh48
+- **Drive (public, clean run 2026-04-23)**: https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg
+- **Drive (archive, 2026-04-22 run)**: https://drive.google.com/drive/folders/16bG4spJodfVzBeGS76KPIzssbEOsAh48
+
+### Resolved — pay / decline / cancel / schedule status race (2026-04-23)
+
+- **Found by**: [`10-concurrency.spec.ts:48`](10-concurrency.spec.ts#L48) — `simultaneous pay + decline — exactly one wins, status deterministic`
+- **Root cause**: `/decline`, `/cancel`, `/schedule` UPDATEs only filtered by `id`. A recipient clicking pay+decline (or sender cancel + recipient pay, etc.) in quick succession could have both handlers pass their status=1 pre-check and both commit, corrupting the final state.
+- **Fix**: Added atomic CAS guard to each UPDATE (`.eq('status', 1)` for decline/cancel, `.in('status', [1,7])` for schedule) + `.maybeSingle()` + a null check that returns 409 `INVALID_STATUS` when the transition was stolen by a concurrent handler. Pay was already safe because `execute_payment_v2` does `SELECT ... FOR UPDATE`.
+- **Coverage added**: 4 new concurrency tests cover pay+cancel, decline+cancel, schedule+decline, and an N-cycle balance-integrity check. All 6 concurrency specs green.
 
 ## Part 1 — Core assignment paths (15)
 
