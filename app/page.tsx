@@ -202,7 +202,7 @@ export default function Dashboard() {
         if (sort === 'status') return a.status - b.status;
         return 0;
       });
-  }, [requests, filter, search, tab]);
+  }, [requests, filter, search, tab, sort]);
 
   const summary = useMemo(() => {
     const pending = requests.filter((r) => r.status === 1 || r.status === 5);
