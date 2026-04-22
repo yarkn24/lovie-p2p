@@ -49,6 +49,10 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .maybeSingle();
 
-  const redirectTarget = profile ? next : '/auth/complete-profile';
-  return NextResponse.redirect(new URL(redirectTarget, request.url));
+  if (!profile) {
+    return NextResponse.redirect(new URL('/auth/complete-profile', request.url));
+  }
+  const confirmedUrl = new URL('/auth/confirmed', request.url);
+  confirmedUrl.searchParams.set('next', next);
+  return NextResponse.redirect(confirmedUrl);
 }
