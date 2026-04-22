@@ -48,9 +48,9 @@ export default defineConfig({
 ```
 
 ## Test Accounts
-- user1@demo.lovie.co / password: 123
-- user2@demo.lovie.co / password: 123
-- user3@demo.lovie.co / password: 123
+- sarah.demo@lovie.co / password: 123 (Sarah Johnson)
+- michael.demo@lovie.co / password: 123 (Michael Rodriguez)
+- david.demo@lovie.co / password: 123 (David Chen)
 
 ## Output Report
 
