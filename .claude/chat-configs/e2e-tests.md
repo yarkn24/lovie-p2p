@@ -10,14 +10,17 @@ Write Playwright E2E tests. Record video. Generate report.
 - Repo: https://github.com/yarkn24/lovie-p2p
 - Assignment: Lovie_task.md
 - Spec: .specify/specs/p2p-payment-requests/spec.md
+- GitHub Spec-Kit: https://github.com/github/spec-kit (read the full repo — understand the workflow, spec format, task structure)
 
 ## How to Start
 
-1. Read Lovie_task.md — understand what the app must do
-2. Read spec.md — understand every feature and edge case
-3. Explore the live app yourself — click through every page, every button
-4. Identify all critical user flows that need test coverage
-5. Write Playwright tests for everything you find
+1. Read https://github.com/github/spec-kit — understand the full Spec-Kit workflow
+2. Read Lovie_task.md — understand what the app must do
+3. Read .specify/specs/p2p-payment-requests/spec.md — every feature + edge case
+4. Read .specify/specs/p2p-payment-requests/tasks.md — every task that was implemented
+5. Explore the live app yourself — click through every page, every button
+6. Identify all critical user flows that need test coverage
+7. Write Playwright tests for everything you find
 
 **Do not wait for someone to tell you what to test. Discover it yourself.**
 
