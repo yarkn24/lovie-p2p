@@ -52,7 +52,6 @@
 - [x] Email suite: 7 templated scenarios (new request × 2, paid, declined, scheduled, cancelled, scheduled-failed) via Resend, HTML-escaped
 - [x] Atomic payment RPC (`execute_payment_v2`) — single Postgres transaction
 - [x] Column-immutability trigger on `payment_requests` (amount, sender_id, note, recipient_email, created_at)
-- [x] Rate limit on payment-requests POST (20/user/hour)
 
 ## Phase 7: Testing
 - [ ] Playwright setup + test user seed

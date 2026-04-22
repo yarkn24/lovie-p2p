@@ -36,7 +36,6 @@ path end-to-end.
 ## Feature list
 
 - Create payment request (email required, phone optional, amount in cents with 2-decimal precision + $10k cap, optional note with bad-words filter + 500-char cap)
-- Rate limit: 20 payment requests per sender per hour
 - Self-request block; recipient email cannot equal sender email
 - Incoming / outgoing dashboard with status filter + name/note search
 - Request detail view with role-aware actions
