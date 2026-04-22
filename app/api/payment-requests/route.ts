@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
   const { data: recipient } = await admin
     .from('users')
     .select('id')
-    .eq('email', recipient_email!)
+    .ilike('email', recipient_email!)
     .maybeSingle();
   if (recipient) recipient_id = recipient.id;
 
