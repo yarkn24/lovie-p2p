@@ -50,19 +50,20 @@ const fmtDateTime = (iso: string) =>
   });
 
 function useCountdown(iso: string) {
-  const calc = () => {
-    const diff = new Date(iso).getTime() - Date.now();
+  const calc = (target: string) => {
+    if (!target) return null;
+    const diff = new Date(target).getTime() - Date.now();
     if (diff <= 0) return null;
     const d = Math.floor(diff / 86400000);
     const h = Math.floor((diff % 86400000) / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     return { d, h, m };
   };
-  const [val, setVal] = useState(calc);
+  const [val, setVal] = useState(() => calc(iso));
   useEffect(() => {
-    const id = setInterval(() => setVal(calc()), 60000);
+    setVal(calc(iso));
+    const id = setInterval(() => setVal(calc(iso)), 60000);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iso]);
   return val;
 }
