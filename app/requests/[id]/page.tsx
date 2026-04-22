@@ -366,10 +366,6 @@ export default function RequestDetail() {
 
             <div className="mt-6 text-xs text-[var(--color-muted)]">
               Request ID: <span className="font-mono">{req.id}</span>
-              {' · '}
-              <Link href={`/requests/${req.id}/share`} className="hover:underline">
-                View shareable link
-              </Link>
             </div>
           </div>
         </div>
