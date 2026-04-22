@@ -73,7 +73,6 @@ export async function POST(
       const senderName = `${sender.first_name} ${sender.last_name}`;
       const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       await createNotification(paymentReq.sender_id, `${declinerName} declined your ${amt} request.`, id);
-      await createNotification(user.id, `You declined ${senderName}'s ${amt} request.`, id);
       if (sender.email) {
         await sendRequestDeclinedEmail({ senderEmail: sender.email, recipientName: declinerName, amount: paymentReq.amount, requestId: id })
           .catch((err) => console.error('[email] decline notification failed', err));

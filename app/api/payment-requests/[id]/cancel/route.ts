@@ -65,7 +65,6 @@ export async function POST(
         senderName,
         amount: paymentReq.amount,
       });
-      await createNotification(user.id, `You cancelled your ${amt} request.`, paymentReq.id);
       if (paymentReq.recipient_id) {
         await createNotification(paymentReq.recipient_id, `${senderName} cancelled their ${amt} request.`, paymentReq.id);
       }

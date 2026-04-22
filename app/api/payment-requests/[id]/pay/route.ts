@@ -105,7 +105,6 @@ export async function POST(
       const payerName = `${payer.first_name} ${payer.last_name}`;
       const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       await createNotification(paymentReq.sender_id, `${payerName} paid your ${amt} request.`, id);
-      await createNotification(user.id, `You paid ${sender.first_name} ${sender.last_name} ${amt}.`, id);
       if (sender.email) {
         await sendPaymentReceivedEmail({ senderEmail: sender.email, payerName, amount: paymentReq.amount, requestId: id })
           .catch((err) => console.error('[email] pay notification failed', err));

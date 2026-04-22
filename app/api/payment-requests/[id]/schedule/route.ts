@@ -122,7 +122,6 @@ export async function POST(
       const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       const dateLabel = scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       await createNotification(paymentReq.sender_id, `${payerName} scheduled your ${amt} request for ${dateLabel}.`, id);
-      await createNotification(user.id, `You scheduled ${sender.first_name} ${sender.last_name}'s ${amt} request for ${dateLabel}.`, id);
       if (sender.email) {
         await sendPaymentScheduledEmail({ senderEmail: sender.email, payerName, amount: paymentReq.amount, scheduledDate: scheduledDate.toISOString(), requestId: id })
           .catch((err) => console.error('[email] schedule notification failed', err));
