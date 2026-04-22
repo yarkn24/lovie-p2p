@@ -1,12 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  badRequest,
+  unauthorized,
+  notFound,
+  internalError,
+  ApiErrorDetail,
+} from '@/lib/errors';
 
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return unauthorized();
 
   const { data, error } = await supabase
     .from('users')
@@ -14,7 +21,7 @@ export async function GET() {
     .eq('id', user.id)
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return internalError(error.message);
 
   return NextResponse.json({ balance: data.balance });
 }
@@ -23,21 +30,27 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return unauthorized();
 
   const body = await request.json().catch(() => null);
   const { action, amount } = body ?? {};
 
+  const details: ApiErrorDetail[] = [];
   if (!action || !['add', 'subtract'].includes(action)) {
-    return NextResponse.json({ error: 'action must be "add" or "subtract"' }, { status: 400 });
+    details.push({ field: 'action', issue: 'must be "add" or "subtract"' });
   }
   if (!amount || typeof amount !== 'number' || amount <= 0) {
-    return NextResponse.json({ error: 'amount must be a positive number' }, { status: 400 });
+    details.push({ field: 'amount', issue: 'must be a positive number' });
+  }
+  if (details.length > 0) {
+    return badRequest('MISSING_FIELD', 'Request validation failed.', details);
   }
 
   const amountInCents = Math.round(amount * 100);
   if (amountInCents <= 0) {
-    return NextResponse.json({ error: 'amount rounds to zero' }, { status: 400 });
+    return badRequest('INVALID_AMOUNT', 'Amount rounds to zero.', [
+      { field: 'amount', issue: 'rounds to zero' },
+    ]);
   }
 
   const delta = action === 'add' ? amountInCents : -amountInCents;
@@ -49,7 +62,7 @@ export async function POST(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (!current) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  if (!current) return notFound('USER_NOT_FOUND', 'User not found.');
 
   const newBalance = Math.max(0, current.balance + delta);
 
@@ -61,7 +74,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (updateErr || !updated) {
-    return NextResponse.json({ error: 'Failed to update balance.' }, { status: 500 });
+    return internalError('Failed to update balance.');
   }
 
   return NextResponse.json({ balance: updated.balance });

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
+import { unauthorized } from '@/lib/errors';
 
 // H9: whitelist auth paths; protect every other page by default.
 const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/confirmed'];
@@ -35,9 +36,7 @@ export async function middleware(request: NextRequest) {
 
   if (!user && !isPublic(pathname)) {
     // API routes return 401 JSON; pages redirect to login
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (pathname.startsWith('/api/')) return unauthorized();
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 

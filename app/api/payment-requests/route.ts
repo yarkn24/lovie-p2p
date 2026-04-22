@@ -22,22 +22,6 @@ export async function POST(request: NextRequest) {
 
   if (!user) return unauthorized();
 
-  // Rate limit: max 20 requests per user per hour. Cheap COUNT against RLS-scoped
-  // sender_id. Not distributed-safe for bursty concurrent creates, but adequate
-  // for preventing email-spam amplification from a single compromised account.
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count: recentCount } = await supabase
-    .from('payment_requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('sender_id', user.id)
-    .gte('created_at', oneHourAgo);
-  if ((recentCount ?? 0) >= 20) {
-    return badRequest(
-      'RATE_LIMITED',
-      'You have hit the hourly limit of 20 payment requests. Try again later.'
-    );
-  }
-
   const body = await request.json().catch(() => null);
   if (!body) {
     return badRequest('MISSING_FIELD', 'Request body must be valid JSON.');
