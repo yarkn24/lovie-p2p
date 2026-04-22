@@ -268,12 +268,18 @@ export default function Dashboard() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
-            <div className="card p-5">
+            <div
+              className="card p-5 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => { setTab('incoming'); setFilter('pending'); document.getElementById('requests-list')?.scrollIntoView({ behavior: 'smooth' }); }}
+            >
               <div className="text-xs uppercase tracking-wide text-[var(--color-muted)] font-semibold">Pending</div>
               <div className="text-2xl font-semibold mt-1">{summary.pendingCount}</div>
               <div className="text-sm text-[var(--color-muted)] mt-0.5">{fmtUSD(summary.pendingTotal)}</div>
             </div>
-            <div className="card p-5">
+            <div
+              className="card p-5 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => { setTab('incoming'); setFilter('paid'); document.getElementById('requests-list')?.scrollIntoView({ behavior: 'smooth' }); }}
+            >
               <div className="text-xs uppercase tracking-wide text-[var(--color-muted)] font-semibold">Completed</div>
               <div className="text-2xl font-semibold mt-1">{summary.paidCount}</div>
               <div className="text-sm text-[var(--color-muted)] mt-0.5">{fmtUSD(summary.paidTotal)}</div>
@@ -282,7 +288,7 @@ export default function Dashboard() {
         </div>
 
         {/* Tabs + filters */}
-        <div className="card overflow-hidden">
+        <div id="requests-list" className="card overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-line)] bg-[var(--color-bg)]">
             <div className="flex rounded-[var(--radius-lovie)] bg-white border border-[var(--color-line)] p-0.5">
               <button
