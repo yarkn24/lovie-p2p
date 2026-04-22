@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPaymentReceivedEmail } from '@/lib/email';
+import { createNotification } from '@/lib/notifications';
 import {
   unauthorized,
   forbidden,
@@ -101,12 +102,16 @@ export async function POST(
     const sender = profiles?.find((p) => p.id === paymentReq.sender_id);
     const payer = profiles?.find((p) => p.id === user.id);
     if (sender?.email && payer) {
+      const payerName = `${payer.first_name} ${payer.last_name}`;
       await sendPaymentReceivedEmail({
         senderEmail: sender.email,
-        payerName: `${payer.first_name} ${payer.last_name}`,
+        payerName,
         amount: paymentReq.amount,
         requestId: id,
       });
+      const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      await createNotification(paymentReq.sender_id, `${payerName} paid your ${amt} request.`, id);
+      await createNotification(user.id, `You paid ${sender.first_name} ${sender.last_name} ${amt}.`, id);
     }
   })().catch((err) => console.error("[email] fire-and-forget failed", err));
 

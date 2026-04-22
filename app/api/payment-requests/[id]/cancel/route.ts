@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendRequestCancelledEmail } from '@/lib/email';
+import { createNotification } from '@/lib/notifications';
 import {
   unauthorized,
   forbidden,
@@ -57,11 +58,17 @@ export async function POST(
   ;(async () => {
     const { data: sender } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
     if (sender) {
+      const senderName = `${sender.first_name} ${sender.last_name}`;
+      const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       await sendRequestCancelledEmail({
         recipientEmail: paymentReq.recipient_email,
-        senderName: `${sender.first_name} ${sender.last_name}`,
+        senderName,
         amount: paymentReq.amount,
       });
+      await createNotification(user.id, `You cancelled your ${amt} request.`, paymentReq.id);
+      if (paymentReq.recipient_id) {
+        await createNotification(paymentReq.recipient_id, `${senderName} cancelled their ${amt} request.`, paymentReq.id);
+      }
     }
   })().catch((err) => console.error("[email] fire-and-forget failed", err));
 

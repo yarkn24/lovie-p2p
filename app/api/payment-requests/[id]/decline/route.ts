@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendRequestDeclinedEmail } from '@/lib/email';
+import { createNotification } from '@/lib/notifications';
 import {
   unauthorized,
   forbidden,
@@ -67,13 +68,20 @@ export async function POST(
       .in('id', [paymentReq.sender_id, user.id]);
     const sender = profiles?.find((p) => p.id === paymentReq.sender_id);
     const decliner = profiles?.find((p) => p.id === user.id);
-    if (sender?.email && decliner) {
-      await sendRequestDeclinedEmail({
-        senderEmail: sender.email,
-        recipientName: `${decliner.first_name} ${decliner.last_name}`,
-        amount: paymentReq.amount,
-        requestId: id,
-      });
+    if (sender && decliner) {
+      const declinerName = `${decliner.first_name} ${decliner.last_name}`;
+      const senderName = `${sender.first_name} ${sender.last_name}`;
+      const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      if (sender.email) {
+        await sendRequestDeclinedEmail({
+          senderEmail: sender.email,
+          recipientName: declinerName,
+          amount: paymentReq.amount,
+          requestId: id,
+        });
+      }
+      await createNotification(paymentReq.sender_id, `${declinerName} declined your ${amt} request.`, id);
+      await createNotification(user.id, `You declined ${senderName}'s ${amt} request.`, id);
     }
   })().catch((err) => console.error("[email] fire-and-forget failed", err));
 

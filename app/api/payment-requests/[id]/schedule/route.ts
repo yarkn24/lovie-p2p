@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendPaymentScheduledEmail } from '@/lib/email';
+import { createNotification } from '@/lib/notifications';
 import {
   unauthorized,
   forbidden,
@@ -116,14 +117,21 @@ export async function POST(
       .in('id', [paymentReq.sender_id, user.id]);
     const sender = profiles?.find((p) => p.id === paymentReq.sender_id);
     const payer = profiles?.find((p) => p.id === user.id);
-    if (sender?.email && payer) {
-      await sendPaymentScheduledEmail({
-        senderEmail: sender.email,
-        payerName: `${payer.first_name} ${payer.last_name}`,
-        amount: paymentReq.amount,
-        scheduledDate: scheduledDate.toISOString(),
-        requestId: id,
-      });
+    if (sender && payer) {
+      const payerName = `${payer.first_name} ${payer.last_name}`;
+      const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      const dateLabel = scheduledDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      if (sender.email) {
+        await sendPaymentScheduledEmail({
+          senderEmail: sender.email,
+          payerName,
+          amount: paymentReq.amount,
+          scheduledDate: scheduledDate.toISOString(),
+          requestId: id,
+        });
+      }
+      await createNotification(paymentReq.sender_id, `${payerName} scheduled your ${amt} request for ${dateLabel}.`, id);
+      await createNotification(user.id, `You scheduled ${sender.first_name} ${sender.last_name}'s ${amt} request for ${dateLabel}.`, id);
     }
   })().catch((err) => console.error("[email] fire-and-forget failed", err));
 
