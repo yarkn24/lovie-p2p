@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-export default function EmailConfirmed() {
+function Confirmed() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') || '/';
@@ -14,6 +14,10 @@ export default function EmailConfirmed() {
     return () => clearTimeout(t);
   }, [next, router]);
 
+  return null;
+}
+
+export default function EmailConfirmed() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
       <div className="flex flex-col items-center gap-5 text-center px-6">
@@ -28,6 +32,7 @@ export default function EmailConfirmed() {
         </div>
         <Image src="/lovie-logo.png" alt="Lovie" width={28} height={28} className="lovie-loading opacity-60" />
       </div>
+      <Suspense><Confirmed /></Suspense>
     </div>
   );
 }
