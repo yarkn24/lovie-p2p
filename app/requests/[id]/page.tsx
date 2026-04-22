@@ -130,6 +130,8 @@ export default function RequestDetail() {
     }
   };
 
+  const countdown = useCountdown(req?.expires_at ?? '');
+
   if (loading) {
     return (
       <Shell user={me}>
@@ -151,7 +153,6 @@ export default function RequestDetail() {
     );
   }
 
-  const countdown = useCountdown(req.expires_at);
   const isSender = me?.id === req.sender_id;
   const isRecipient =
     me?.id === req.recipient_id || me?.email === req.recipient_email;
