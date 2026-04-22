@@ -94,8 +94,8 @@ export async function POST(
     );
   }
 
-  // RLS policy "Recipients can schedule" allows this with status=5 + recipient check,
-  // so defense-in-depth: use user-scoped client for the UPDATE.
+  // CAS guard on status IN (1=pending, 7=failed) — prevents schedule from
+  // overwriting a state reached concurrently by pay/decline/cancel.
   const { data: updated, error: updateError } = await supabase
     .from('payment_requests')
     .update({
@@ -104,10 +104,17 @@ export async function POST(
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
+    .in('status', [1, 7])
     .select()
-    .single();
+    .maybeSingle();
 
   if (updateError) return internalError(updateError.message);
+  if (!updated) {
+    return conflict(
+      'INVALID_STATUS',
+      'Request is no longer schedulable — another action may have completed first.'
+    );
+  }
 
   const admin = createAdminClient();
   ;(async () => {

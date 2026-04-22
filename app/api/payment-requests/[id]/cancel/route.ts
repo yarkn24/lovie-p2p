@@ -45,16 +45,23 @@ export async function POST(
     );
   }
 
-  // RLS policy "Senders can cancel" allows this with status=6 + sender check,
-  // so defense-in-depth: use user-scoped client for the UPDATE.
+  // CAS guard on status=1 so a sender-cancel racing with a recipient pay/decline
+  // can't overwrite a completed state.
   const { data: updated, error: updateError } = await supabase
     .from('payment_requests')
     .update({ status: 6, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('status', 1)
     .select()
-    .single();
+    .maybeSingle();
 
   if (updateError) return internalError(updateError.message);
+  if (!updated) {
+    return conflict(
+      'INVALID_STATUS',
+      'Request is no longer pending — another action may have completed first.'
+    );
+  }
 
   const admin = createAdminClient();
   ;(async () => {

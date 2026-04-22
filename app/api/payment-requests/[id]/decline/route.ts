@@ -49,16 +49,23 @@ export async function POST(
     );
   }
 
-  // RLS policy "Recipients can decline" allows this with status=3 + recipient check,
-  // so defense-in-depth: use user-scoped client for the UPDATE.
+  // CAS guard on status=1 prevents pay-vs-decline races from corrupting state
+  // (both handlers reading status=1 simultaneously and each overwriting).
   const { data: updated, error: updateError } = await supabase
     .from('payment_requests')
     .update({ status: 3, updated_at: new Date().toISOString() })
     .eq('id', id)
+    .eq('status', 1)
     .select()
-    .single();
+    .maybeSingle();
 
   if (updateError) return internalError(updateError.message);
+  if (!updated) {
+    return conflict(
+      'INVALID_STATUS',
+      'Request is no longer pending — another action may have completed first.'
+    );
+  }
 
   const admin = createAdminClient();
   ;(async () => {
