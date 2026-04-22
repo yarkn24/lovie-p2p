@@ -2,11 +2,12 @@ import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
 // H9: whitelist auth paths; protect every other page by default.
-const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback'];
+const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/confirmed'];
+const PUBLIC_API_PATHS = ['/api/auth/check-email'];
 
 function isPublic(pathname: string): boolean {
   if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true;
-  // Shareable request links work without login
+  if (PUBLIC_API_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true;
   if (/^\/requests\/[^/]+\/share$/.test(pathname)) return true;
   return false;
 }
