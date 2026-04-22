@@ -101,17 +101,15 @@ export async function POST(
       .in('id', [paymentReq.sender_id, user.id]);
     const sender = profiles?.find((p) => p.id === paymentReq.sender_id);
     const payer = profiles?.find((p) => p.id === user.id);
-    if (sender?.email && payer) {
+    if (sender && payer) {
       const payerName = `${payer.first_name} ${payer.last_name}`;
-      await sendPaymentReceivedEmail({
-        senderEmail: sender.email,
-        payerName,
-        amount: paymentReq.amount,
-        requestId: id,
-      });
       const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       await createNotification(paymentReq.sender_id, `${payerName} paid your ${amt} request.`, id);
       await createNotification(user.id, `You paid ${sender.first_name} ${sender.last_name} ${amt}.`, id);
+      if (sender.email) {
+        await sendPaymentReceivedEmail({ senderEmail: sender.email, payerName, amount: paymentReq.amount, requestId: id })
+          .catch((err) => console.error('[email] pay notification failed', err));
+      }
     }
   })().catch((err) => console.error("[email] fire-and-forget failed", err));
 
