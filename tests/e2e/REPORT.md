@@ -2,12 +2,13 @@
 
 - Target: https://lovie-p2p-gules.vercel.app
 - Runner: Playwright 1.59.1 (chromium + Mobile Chrome / Pixel 5, 1 worker, fullyParallel=false)
-- Run date: 2026-04-23 (clean full-suite after CAS race fix)
-- **Latest full run**: **71 passed · 4 skipped (cron-dependent) · 0 failed** · 4m 54s
+- Run date: 2026-04-23 (clean full-suite after CAS race fix + UI/UX spec)
+- **Latest full run**: **84 passed · 4 skipped (cron-dependent) · 0 failed** · 5m 30s
 - **Core suite**: 13/13 executable paths pass · 2/15 skipped by design (cron-dependent) · 1 bonus guardrail
-- **Extensive suite**: 39/39 pass across 7 spec files (auth negatives, validation, authz, security, concurrency ×6, API contract, responsive)
+- **Extensive suite**: 52/52 pass across 8 spec files (auth negatives, validation, authz, security, concurrency ×6, API contract, responsive, UI/UX ×13)
+- **UI/UX coverage**: 13 tests asserting loading spinners, disabled button transitions, error/success banners, empty states, focus management, form validation feedback, and confirmation modals ([13-ui-ux.spec.ts](13-ui-ux.spec.ts)).
 - Video: `video: 'on'` in config for `page`-fixture tests; manually-created contexts use `recordingContext()` helper ([fixtures.ts:10-18](fixtures.ts#L10-L18)).
-- **Drive (public, clean run 2026-04-23)**: https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg
+- **Drive (public, clean run 2026-04-23 — includes UI/UX)**: https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg (113 webm, 21 MiB)
 - **Drive (archive, 2026-04-22 run)**: https://drive.google.com/drive/folders/16bG4spJodfVzBeGS76KPIzssbEOsAh48
 
 ### Resolved — pay / decline / cancel / schedule status race (2026-04-23)
@@ -40,9 +41,9 @@
 
 **Core summary: 13/13 executable paths passed (100%). Paths 5, 6 skipped by design. Path 13b is a bonus self-request guardrail.**
 
-## Part 2 — Extensive test suite (35)
+## Part 2 — Extensive test suite (52)
 
-Added to exercise the evaluation rubric: edge cases, fintech correctness, security, concurrency, API contract, responsive design. Runs on chromium; core flows also run on Mobile Chrome (Pixel 5).
+Added to exercise the evaluation rubric: edge cases, fintech correctness, security, concurrency, API contract, responsive design, UI/UX states. Runs on chromium; core flows also run on Mobile Chrome (Pixel 5).
 
 ### 06 — Auth negative paths (5/5)
 
@@ -88,12 +89,16 @@ Added to exercise the evaluation rubric: edge cases, fintech correctness, securi
 | 9.5 | invalid email format rejected                               | ✅ Pass |
 | 9.6 | self-request via API blocked                                | ✅ Pass |
 
-### 10 — Concurrency / race conditions (2/2)
+### 10 — Concurrency / race conditions (6/6)
 
-| #    | Test                                                                | Status  |
-| ---- | ------------------------------------------------------------------- | ------- |
-| 10.1 | double-pay same request from two tabs — exactly one succeeds         | ✅ Pass |
-| 10.2 | simultaneous pay + decline — exactly one wins, status deterministic  | ✅ Pass |
+| #    | Test                                                                      | Status  |
+| ---- | ------------------------------------------------------------------------- | ------- |
+| 10.1 | double-pay same request from two tabs — exactly one succeeds              | ✅ Pass |
+| 10.2 | simultaneous pay + decline — exactly one wins, status deterministic       | ✅ Pass |
+| 10.3 | simultaneous pay + cancel — exactly one wins                              | ✅ Pass |
+| 10.4 | simultaneous decline + cancel — exactly one wins                          | ✅ Pass |
+| 10.5 | simultaneous schedule + decline — exactly one wins                        | ✅ Pass |
+| 10.6 | balance integrity: N sequential pay/decline cycles net to correct totals  | ✅ Pass |
 
 ### 11 — API contract (5/5)
 
@@ -114,7 +119,27 @@ Added to exercise the evaluation rubric: edge cases, fintech correctness, securi
 | 12.3 | create-request form usable on mobile              | ✅ Pass |
 | 12.4 | request detail page renders on mobile             | ✅ Pass |
 
-**Extensive summary: 35/35 passed. Additionally, the 5 core-flow spec files (01-05) run on Mobile Chrome (Pixel 5) as a second project — same pass rate.**
+### 13 — UI/UX states (13/13)
+
+Asserts visible user-facing states the happy-path flow specs don't explicitly verify: loading spinners, disabled button transitions, error/success banners, empty states, focus management, form validation feedback, confirmation modals.
+
+| #     | Test                                                                                 | Status  |
+| ----- | ------------------------------------------------------------------------------------ | ------- |
+| 13.1  | login: invalid credentials surface inline error banner, not a crash                  | ✅ Pass |
+| 13.2  | login: keyboard navigation works (Tab through email → password)                      | ✅ Pass |
+| 13.3  | new request: amount input rejects non-numeric characters silently                    | ✅ Pass |
+| 13.4  | new request: note character counter updates live                                     | ✅ Pass |
+| 13.5  | new request: submit button shows "Creating…" and is disabled during submit           | ✅ Pass |
+| 13.6  | new request: inline error banner surfaces on server-side validation failure          | ✅ Pass |
+| 13.7  | request detail: Schedule button is disabled until a date is picked                   | ✅ Pass |
+| 13.8  | request detail: pay flow shows loading overlay then success modal                    | ✅ Pass |
+| 13.9  | request detail: cancelled request shows "No actions available" terminal state        | ✅ Pass |
+| 13.10 | dashboard: empty state renders for filter with no matches                            | ✅ Pass |
+| 13.11 | dashboard: confirmation modal appears before inline Pay action                       | ✅ Pass |
+| 13.12 | dashboard: empty outgoing surfaces "Send your first request" CTA                     | ✅ Pass |
+| 13.13 | request detail: pending countdown indicator is visible                               | ✅ Pass |
+
+**Extensive summary: 52/52 passed. Additionally, the 5 core-flow spec files (01-05) run on Mobile Chrome (Pixel 5) as a second project — same pass rate.**
 
 ## Architecture notes
 
