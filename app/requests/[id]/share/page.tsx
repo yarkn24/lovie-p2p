@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function RequestShare() {
+function ShareContent() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const pinnedEmail = searchParams.get('e') || '';
@@ -90,7 +90,9 @@ export default function RequestShare() {
         ) : (
           <>
             <p className="text-sm text-[var(--color-muted)] mt-2">
-              Sign in to view the details and pay, decline, or schedule.
+              {isRegistered === false
+                ? 'Create a free account to pay, decline, or schedule.'
+                : 'Sign in to view the details and pay, decline, or schedule.'}
             </p>
             {pinnedEmail && (
               <p className="text-xs text-[var(--color-muted)] mt-3">
@@ -112,5 +114,13 @@ export default function RequestShare() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RequestShare() {
+  return (
+    <Suspense fallback={<div className="min-h-screen grid place-items-center text-sm text-[var(--color-muted)]">Loading…</div>}>
+      <ShareContent />
+    </Suspense>
   );
 }
