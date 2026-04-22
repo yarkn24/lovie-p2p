@@ -6,3 +6,8 @@ supabase/.temp/
 *.swp
 *.swo
 .DS_Store
+
+# Playwright artifacts — regenerated on every run, videos live in Drive
+playwright-report/
+test-results/
+tsconfig.tsbuildinfo

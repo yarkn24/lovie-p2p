@@ -93,16 +93,29 @@ Safe to re-run. Wipes existing demo payment rows and re-creates 30 requests.
 
 ## E2E tests
 
-Playwright is wired up but the test suite is still a work in progress.
+Playwright suite of **12 spec files** covering the 5 core flows plus extended
+coverage: auth-negative, payment edge cases, authorization (RLS), security
+(XSS/SQLi), concurrency / race conditions, API contract, and responsive
+mobile. Two projects run in series — Desktop Chrome (full suite) and Mobile
+Chrome / Pixel 5 (core flows + responsive spec).
 
 ```bash
-npm install            # installs @playwright/test
-npx playwright install # browsers (first run only)
-npx playwright test    # runs specs in tests/
+npm install                      # installs @playwright/test
+npx playwright install chromium  # browsers (first run only)
+npx playwright test              # runs all specs in tests/ against live demo
+npx playwright test --project=chromium   # desktop only
+npx playwright test --project="Mobile Chrome"  # mobile only
 ```
 
+Tests target the live deployment by default (`BASE_URL=https://lovie-p2p-gules.vercel.app`).
+Override with `BASE_URL=http://localhost:3000` after `npm run dev` to run
+against a local server.
+
 `playwright.config.ts` has `use: { video: 'on' }` so recordings land in
-`playwright-report/` and `test-results/` when specs run.
+`playwright-report/` and `test-results/` on every run.
+
+- **Test report** (per-path pass/fail, architecture notes): [`tests/e2e/REPORT.md`](tests/e2e/REPORT.md)
+- **Screen recordings** (full videos, public): https://drive.google.com/drive/folders/16bG4spJodfVzBeGS76KPIzssbEOsAh48
 
 ## Project structure
 
