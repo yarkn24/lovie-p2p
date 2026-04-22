@@ -49,13 +49,23 @@ const fmtDateTime = (iso: string) =>
     minute: '2-digit',
   });
 
-const timeLeft = (iso: string) => {
-  const diff = new Date(iso).getTime() - Date.now();
-  if (diff <= 0) return 'Expired';
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  return `${d}d ${h}h`;
-};
+function useCountdown(iso: string) {
+  const calc = () => {
+    const diff = new Date(iso).getTime() - Date.now();
+    if (diff <= 0) return null;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return { d, h, m };
+  };
+  const [val, setVal] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setVal(calc()), 60000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso]);
+  return val;
+}
 
 const displayName = (p: Party, fallback: string) =>
   p ? `${p.first_name} ${p.last_name}` : fallback;
@@ -141,6 +151,7 @@ export default function RequestDetail() {
     );
   }
 
+  const countdown = useCountdown(req.expires_at);
   const isSender = me?.id === req.sender_id;
   const isRecipient =
     me?.id === req.recipient_id || me?.email === req.recipient_email;
@@ -236,10 +247,24 @@ export default function RequestDetail() {
               <div className="text-xs uppercase tracking-wide text-[var(--color-muted)] font-semibold">
                 Expires
               </div>
-              <div className="mt-1 text-sm">
-                {fmtDateTime(req.expires_at)}{' '}
-                <span className="text-[var(--color-muted)]">· {timeLeft(req.expires_at)}</span>
-              </div>
+              <div className="mt-1 text-sm">{fmtDateTime(req.expires_at)}</div>
+              {req.status === 1 && (
+                <div className="mt-1">
+                  {countdown ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-2.5 py-0.5">
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className="shrink-0">
+                        <circle cx="5" cy="5" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M5 2.5V5l1.5 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                      </svg>
+                      {countdown.d > 0 && `${countdown.d}d `}{countdown.h}h {countdown.m}m left
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-100 border border-red-200 rounded-full px-2.5 py-0.5">
+                      Expired
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
