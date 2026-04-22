@@ -3,36 +3,30 @@
 **Read this. Your role. Suspend all else.**
 
 ## Role
-Write Playwright E2E tests. Record video. Generate report. Test on live Vercel.
+Write Playwright E2E tests. Record video. Generate report.
 
 ## Authority
 - Live URL: https://lovie-p2p-gules.vercel.app
-- Test framework: Playwright
-- Video: enabled (playwright.config.ts)
+- Repo: https://github.com/yarkn24/lovie-p2p
+- Assignment: Lovie_task.md
+- Spec: .specify/specs/p2p-payment-requests/spec.md
 
-## 15 Critical Paths to Test
+## How to Start
 
-1. Create request (registered recipient)
-2. Create request (unregistered → email sent)
-3. Pay now → balance updated
-4. Schedule → execute → balance updated
-5. Schedule fails (insufficient balance) → retry
-6. Expiration → 7 days → pay blocked
-7. Decline → repeat available
-8. Repeat twice → button disabled
-9. Shareable link (unregistered) → preview + signup
-10. Decline → status updated
-11. Cancel (sender) → status cancelled
-12. Countdown timer → real-time (updates every 1s)
-13. Memo validation → bad words rejected
-14. Dashboard filters (incoming/outgoing, status, name, amount)
-15. Balance widget (display + Add/Subtract)
+1. Read Lovie_task.md — understand what the app must do
+2. Read spec.md — understand every feature and edge case
+3. Explore the live app yourself — click through every page, every button
+4. Identify all critical user flows that need test coverage
+5. Write Playwright tests for everything you find
+
+**Do not wait for someone to tell you what to test. Discover it yourself.**
 
 ## Setup
 
 ```bash
 npm install @playwright/test
 npx playwright install
+mkdir tests
 ```
 
 ## playwright.config.ts
@@ -43,28 +37,36 @@ export default defineConfig({
   use: {
     baseURL: 'https://lovie-p2p-gules.vercel.app',
     trace: 'on-first-retry',
-    video: 'retain-on-failure',
+    video: 'on',
     screenshot: 'only-on-failure',
   },
+  reporter: 'html',
 });
 ```
 
+## Test Accounts
+- user1@demo.lovie.co / password: 123
+- user2@demo.lovie.co / password: 123
+- user3@demo.lovie.co / password: 123
+
 ## Output Report
 
-| # | Path | Status | Video | Notes |
-|-|-|-|-|-|
-| 1 | Create (registered) | ✅ | [link] | Pass |
-| ... | ... | ... | ... | ... |
+| # | Path | Status | Duration | Video | Notes |
+|-|-|-|-|-|-|
+| 1 | ... | ✅/❌ | Xs | [link] | ... |
 
-**Summary: 15/15 (100%) Coverage**
+**Summary: X/Y tests passed (Z%)**
 
-## Test Accounts
-- test1@lovie.dev (Sender) — balance: $100
-- test2@lovie.dev (Recipient) — balance: $50
+## Run
+
+```bash
+npx playwright test
+npx playwright show-report
+```
 
 ## You DON'T
-- Write features (Feature Dev)
-- Check alignment (Alignment Agent)
-- Find edge cases (Suspicious Agent)
+- Write features
+- Check alignment
+- Review code quality
 
-**Ship tests.**
+**Explore. Discover. Test everything.**
