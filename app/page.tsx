@@ -60,6 +60,7 @@ export default function Dashboard() {
     | null
   >(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, number>>({});
   const router = useRouter();
 
   const skipKey = (action: 'pay' | 'decline' | 'schedule') => `confirm-skip-${action}`;
@@ -91,11 +92,7 @@ export default function Dashboard() {
         return;
       }
       const newStatus = action === 'pay' ? 2 : action === 'decline' ? 3 : 5;
-      setRequests((prev) =>
-        prev.map((r) =>
-          r.id === req.id ? { ...r, status: newStatus } : r
-        )
-      );
+      setStatusOverrides((prev) => ({ ...prev, [req.id]: newStatus }));
       const meRes = await fetch('/api/auth/user', { credentials: 'include' });
       if (meRes.ok) setMe(await meRes.json());
     } finally {
@@ -359,7 +356,8 @@ export default function Dashboard() {
                 const counterEmail =
                   tab === 'incoming' ? r.sender?.email : r.recipient?.email ?? r.recipient_email;
                 const counterAvatar = getAvatar(counterEmail);
-                const s = STATUS[r.status] ?? STATUS[1];
+                const displayStatus = statusOverrides[r.id] ?? r.status;
+                const s = STATUS[displayStatus] ?? STATUS[1];
                 return (
                   <li key={r.id}>
                     <Link
@@ -395,7 +393,7 @@ export default function Dashboard() {
                           <span className={`chip ${s.chip}`}>{s.label}</span>
                         </div>
                       </div>
-                      {tab === 'incoming' && r.status === 1 && (
+                      {tab === 'incoming' && displayStatus === 1 && (
                         <div className="flex items-center gap-1.5 ml-2 shrink-0">
                           <button
                             onClick={(e) => handleInlineAction('pay', r, e)}
