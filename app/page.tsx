@@ -218,7 +218,7 @@ export default function Dashboard() {
   return (
     <Shell user={me}>
       {rowBusy && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
           <img src="/lovie-logo.png" alt="Processing" width={72} height={72} className="lovie-loading" />
         </div>
       )}
