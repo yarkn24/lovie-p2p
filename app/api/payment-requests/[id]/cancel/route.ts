@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendRequestCancelledEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
@@ -55,8 +56,9 @@ export async function POST(
 
   if (updateError) return internalError(updateError.message);
 
+  const admin = createAdminClient();
   ;(async () => {
-    const { data: sender } = await supabase.from('users').select('first_name, last_name').eq('id', user.id).single();
+    const { data: sender } = await admin.from('users').select('first_name, last_name').eq('id', user.id).single();
     if (sender) {
       const senderName = `${sender.first_name} ${sender.last_name}`;
       const amt = (paymentReq.amount / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
