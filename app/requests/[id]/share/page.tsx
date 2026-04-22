@@ -12,6 +12,7 @@ export default function RequestShare() {
   const [state, setState] = useState<'loading' | 'anon' | 'wrong-account' | 'redirect' | 'error'>('loading');
   const [loggedInEmail, setLoggedInEmail] = useState('');
   const [error, setError] = useState('');
+  const [isRegistered, setIsRegistered] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -26,6 +27,11 @@ export default function RequestShare() {
         router.replace(`/requests/${id}`);
         setState('redirect');
         return;
+      }
+      if (pinnedEmail) {
+        const checkRes = await fetch(`/api/auth/check-email?email=${encodeURIComponent(pinnedEmail)}`);
+        const { registered } = await checkRes.json();
+        setIsRegistered(registered);
       }
       setState('anon');
     })().catch(() => {
@@ -94,8 +100,15 @@ export default function RequestShare() {
           </>
         )}
         <div className="flex gap-3 mt-6 justify-center">
-          <Link href={loginHref} className="btn-brand">Sign in</Link>
-          <Link href={signupHref} className="btn-ghost">Create account</Link>
+          {isRegistered === false
+            ? <Link href={signupHref} className="btn-brand">Create account</Link>
+            : isRegistered === true
+            ? <Link href={loginHref} className="btn-brand">Sign in</Link>
+            : <>
+                <Link href={loginHref} className="btn-brand">Sign in</Link>
+                <Link href={signupHref} className="btn-ghost">Create account</Link>
+              </>
+          }
         </div>
       </div>
     </div>
