@@ -270,7 +270,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
             <div
               className="card p-5 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => { setTab('incoming'); setFilter('pending'); document.getElementById('requests-list')?.scrollIntoView({ behavior: 'smooth' }); }}
+              onClick={() => { setFilter('pending'); document.getElementById('requests-list')?.scrollIntoView({ behavior: 'smooth' }); }}
             >
               <div className="text-xs uppercase tracking-wide text-[var(--color-muted)] font-semibold">Pending</div>
               <div className="text-2xl font-semibold mt-1">{summary.pendingCount}</div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
             </div>
             <div
               className="card p-5 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => { setTab('incoming'); setFilter('paid'); document.getElementById('requests-list')?.scrollIntoView({ behavior: 'smooth' }); }}
+              onClick={() => { setFilter('paid'); document.getElementById('requests-list')?.scrollIntoView({ behavior: 'smooth' }); }}
             >
               <div className="text-xs uppercase tracking-wide text-[var(--color-muted)] font-semibold">Completed</div>
               <div className="text-2xl font-semibold mt-1">{summary.paidCount}</div>
