@@ -91,6 +91,7 @@ export default function Dashboard() {
         alert(err?.error?.message ?? `Failed to ${action}.`);
         return;
       }
+      await new Promise((r) => setTimeout(r, 2000));
       const newStatus = action === 'pay' ? 2 : action === 'decline' ? 3 : 5;
       setStatusOverrides((prev) => ({ ...prev, [req.id]: newStatus }));
       const meRes = await fetch('/api/auth/user', { credentials: 'include' });
@@ -216,6 +217,11 @@ export default function Dashboard() {
 
   return (
     <Shell user={me}>
+      {rowBusy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <img src="/lovie-logo.png" alt="Processing" width={72} height={72} className="lovie-loading" />
+        </div>
+      )}
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Hero */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">

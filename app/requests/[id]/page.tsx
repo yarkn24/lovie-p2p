@@ -151,6 +151,11 @@ export default function RequestDetail() {
 
   return (
     <Shell user={me}>
+      {busy && !paySuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <img src="/lovie-logo.png" alt="Processing" width={72} height={72} className="lovie-loading" />
+        </div>
+      )}
       {paySuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-10 flex flex-col items-center gap-4 max-w-sm w-full mx-4">
