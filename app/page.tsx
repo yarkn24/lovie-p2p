@@ -377,7 +377,7 @@ export default function Dashboard() {
                   <li key={r.id}>
                     <Link
                       href={`/requests/${r.id}`}
-                      className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--color-bg)] transition"
+                      className="group flex items-center gap-4 px-5 py-4 hover:bg-[var(--color-bg)] transition"
                     >
                       <div className="w-10 h-10 rounded-full overflow-hidden shrink-0"
                         style={{ background: 'var(--color-bg-2)', flexShrink: 0 }}>
@@ -408,31 +408,41 @@ export default function Dashboard() {
                           <span className={`chip ${s.chip}`}>{s.label}</span>
                         </div>
                       </div>
-                      {tab === 'incoming' && displayStatus === 1 && new Date(r.expires_at) > new Date() && (
-                        <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                          <button
-                            onClick={(e) => handleInlineAction('pay', r, e)}
-                            disabled={rowBusy === r.id}
-                            className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] text-white hover:opacity-90 disabled:opacity-40"
-                          >
-                            Pay
-                          </button>
-                          <button
-                            onClick={(e) => handleInlineAction('schedule', r, e)}
-                            disabled={rowBusy === r.id}
-                            className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-bg)] disabled:opacity-40"
-                          >
-                            Schedule
-                          </button>
-                          <button
-                            onClick={(e) => handleInlineAction('decline', r, e)}
-                            disabled={rowBusy === r.id}
-                            className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-bg)] disabled:opacity-40"
-                          >
-                            Decline
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                        {tab === 'incoming' && displayStatus === 1 && new Date(r.expires_at) > new Date() && (
+                          <>
+                            <button
+                              onClick={(e) => handleInlineAction('pay', r, e)}
+                              disabled={rowBusy === r.id}
+                              className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] text-white hover:opacity-90 disabled:opacity-40"
+                            >
+                              Pay
+                            </button>
+                            <button
+                              onClick={(e) => handleInlineAction('schedule', r, e)}
+                              disabled={rowBusy === r.id}
+                              className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                            >
+                              Schedule
+                            </button>
+                            <button
+                              onClick={(e) => handleInlineAction('decline', r, e)}
+                              disabled={rowBusy === r.id}
+                              className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                            >
+                              Decline
+                            </button>
+                          </>
+                        )}
+                        {/* View details — row is already a Link; this span just
+                            surfaces the affordance per assignment requirement. */}
+                        <span
+                          aria-hidden
+                          className="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--color-line)] bg-white text-[var(--color-ink-3)] group-hover:bg-[var(--color-bg)]"
+                        >
+                          View details
+                        </span>
+                      </div>
                     </Link>
                   </li>
                 );
