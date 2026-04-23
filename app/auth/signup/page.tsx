@@ -41,6 +41,19 @@ function SignupForm() {
 
     setLoading(true);
 
+    // Check if email already exists in users table
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .ilike('email', email)
+      .maybeSingle();
+
+    if (existing) {
+      setLoading(false);
+      setError('You already have an account with this email. Please sign in instead.');
+      return;
+    }
+
     const redirectPath = `/auth/callback?next=${encodeURIComponent(redirectTo)}`;
     const { error: signUpError } = await supabase.auth.signUp({
       email,
