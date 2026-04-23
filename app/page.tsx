@@ -405,7 +405,7 @@ export default function Dashboard() {
                           <span className={`chip ${s.chip}`}>{s.label}</span>
                         </div>
                       </div>
-                      {tab === 'incoming' && displayStatus === 1 && (
+                      {tab === 'incoming' && displayStatus === 1 && new Date(r.expires_at) > new Date() && (
                         <div className="flex items-center gap-1.5 ml-2 shrink-0">
                           <button
                             onClick={(e) => handleInlineAction('pay', r, e)}

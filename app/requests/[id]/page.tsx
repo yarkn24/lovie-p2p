@@ -160,6 +160,11 @@ export default function RequestDetail() {
   const isRecipient =
     me?.id === req.recipient_id || me?.email === req.recipient_email;
   const s = STATUS[req.status] ?? STATUS[1];
+  // A request may still be status=1 (pending) but past its expiration if the
+  // hourly cron hasn't flipped it yet. Treat it as expired client-side so we
+  // don't surface Pay/Decline/Schedule buttons that the server will reject.
+  const isEffectivelyExpired =
+    req.expired === 1 || new Date(req.expires_at) < new Date();
 
   const senderName = displayName(req.sender, 'Unknown');
   const recipientName = displayName(req.recipient, req.recipient_email);
@@ -281,7 +286,7 @@ export default function RequestDetail() {
             )}
 
             <div className="flex flex-wrap gap-2 items-center">
-              {isRecipient && req.status === 1 && (
+              {isRecipient && req.status === 1 && !isEffectivelyExpired && (
                 <>
                   <button onClick={() => act('pay')} disabled={busy} className="btn-brand" style={{ minWidth: '7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                     {busy ? <><img src="/lovie-logo.png" width={18} height={18} className="lovie-loading" alt="" />Processing…</> : 'Pay now'}
@@ -314,10 +319,16 @@ export default function RequestDetail() {
                 </>
               )}
 
-              {isSender && req.status === 1 && (
+              {isSender && req.status === 1 && !isEffectivelyExpired && (
                 <button onClick={() => act('cancel')} disabled={busy} className="btn-danger">
                   Cancel request
                 </button>
+              )}
+
+              {req.status === 1 && isEffectivelyExpired && (
+                <div className="text-sm text-[var(--color-muted)]">
+                  This request has expired and can no longer be paid, declined, or cancelled.
+                </div>
               )}
 
               {isSender && (req.status === 3 || req.status === 7) && req.repeated === 0 && (

@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { loadEnvConfig } from '@next/env';
+
+// Load .env.local so tests that use the Supabase service-role key (for
+// forcing DB state in expiration / scheduled-failure specs) can find it.
+loadEnvConfig(process.cwd());
 
 const BASE_URL = process.env.BASE_URL || 'https://lovie-p2p-gules.vercel.app';
 
