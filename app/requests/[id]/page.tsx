@@ -209,7 +209,7 @@ export default function RequestDetail() {
   }
 
   // Anonymous or forbidden-authenticated viewer: show a public preview with
-  // sign-in / sign-up CTAs (Wise-style "Sarah requested $X from you").
+  // sign-in / sign-up CTAs ("Sarah requested $X from you").
   if (anon && !req) {
     const status = STATUS[anon.status] ?? { label: 'Unknown', chip: 'chip-expired' };
     const redirectParam = `redirect=${encodeURIComponent(`/requests/${anon.id}`)}`;

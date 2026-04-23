@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   } else if (amount > 10000) {
     details.push({ field: 'amount', issue: 'must be $10,000 or less' });
   } else {
-    // USD has 2 decimal places (cents). Reject any finer precision (Stripe pattern).
+    // USD has 2 decimal places (cents). Reject any finer precision.
     const [, fraction = ''] = amount.toString().split('.');
     if (fraction.length > 2) {
       details.push({ field: 'amount', issue: 'must have at most 2 decimal places' });

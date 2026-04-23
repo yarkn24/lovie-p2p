@@ -16,7 +16,7 @@ List endpoints return an array directly:
 ```
 
 ### Error
-All mutating endpoints return a Stripe/PayPal-style structured envelope:
+All mutating endpoints return a structured error envelope:
 
 ```json
 {

@@ -1,7 +1,7 @@
 # Spec: P2P Payment Request Feature
 
 ## Overview
-A Venmo/Cash App-style payment request system. Users request money from others via email. Recipients pay, decline, or schedule payment. Requests expire after 7 days.
+A peer-to-peer payment request system. Users request money from others via email. Recipients pay, decline, or schedule payment. Requests expire after 7 days.
 
 ## User Stories
 

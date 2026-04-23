@@ -1,8 +1,8 @@
 # Lovie P2P — Payment Requests
 
-A Venmo-style peer-to-peer payment request feature, built for the Lovie Feature
-Engineer interview. Users request money from each other by email; recipients can
-pay, decline, or schedule payment. Requests expire after 7 days.
+A peer-to-peer payment request feature. Users request money from each other by
+email; recipients can pay, decline, or schedule payment. Requests expire after
+7 days.
 
 Built spec-first using [GitHub Spec-Kit](https://github.com/github/spec-kit),
 implemented with Claude Code, deployed on Vercel + Supabase.
@@ -45,7 +45,7 @@ path end-to-end.
 - 7-day expiry with live countdown, enforced server-side
 - Daily cron jobs (Vercel, Hobby plan) for expiry + scheduled execution
 - Balance top-up / subtract (admin convenience for the demo)
-- Stripe/PayPal-style structured error envelope (`error.type` / `code` / `details[]`)
+- Structured error envelope (`error.type` / `code` / `details[]`)
 
 ## Tech stack
 
@@ -128,7 +128,7 @@ app/
 │   └── requests/        # new, [id], [id]/share
 ├── components/          # Shell (nav)
 ├── lib/
-│   ├── errors.ts        # Structured error helpers (Stripe/PayPal-style)
+│   ├── errors.ts        # Structured error helpers
 │   ├── validation.ts    # Email, bad-words, note length
 │   └── supabase/        # server, client, admin (service-role)
 ├── scripts/seed.mjs     # Demo users + mock payments
@@ -151,4 +151,4 @@ All mutating endpoints return a consistent error envelope:
 }
 ```
 
-Informed by Stripe (`error.code` + `type`) and PayPal (`details[]`).
+Follows a standard API error envelope: a structured error object with `type`, `code`, optional `details[]`, and a human-readable `message`.
