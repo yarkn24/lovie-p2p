@@ -93,7 +93,7 @@ Safe to re-run. Wipes existing demo payment rows and re-creates 30 requests.
 
 ## E2E tests
 
-Playwright suite of **13 spec files · 88 tests** covering the 5 core flows plus
+Playwright suite of **13 spec files · 90 tests** covering the 5 core flows plus
 extended coverage: auth-negative, payment edge cases, authorization (RLS),
 security (XSS/SQLi), concurrency / race conditions, API contract, responsive
 mobile, and UI/UX states (loading/disabled/empty/error). Two projects run in
@@ -132,7 +132,7 @@ app/
 │   ├── validation.ts    # Email, bad-words, note length
 │   └── supabase/        # server, client, admin (service-role)
 ├── scripts/seed.mjs     # Demo users + mock payments
-├── supabase/migrations/ # 13 migrations (schema, RPCs, failure_reason, RLS fixes, phone columns, notifications, column-immutability trigger, atomic payment RPC, atomic retry RPC, users-SELECT own-row only)
+├── supabase/migrations/ # 14 migrations (schema, RPCs, failure_reason, RLS fixes, phone columns, notifications, column-immutability trigger, atomic payment RPC, atomic retry RPC, users-SELECT own-row only)
 └── vercel.json          # Cron schedules
 ```
 

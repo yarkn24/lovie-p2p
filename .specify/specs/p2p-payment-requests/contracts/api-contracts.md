@@ -30,7 +30,7 @@ All mutating endpoints return a Stripe/PayPal-style structured envelope:
 ```
 
 `error.type` is one of: `invalid_request_error`, `authentication_error`,
-`permission_error`, `not_found_error`, `conflict_error`, `api_error`.
+`authorization_error`, `not_found_error`, `conflict_error`, `api_error`.
 `error.details[]` is present only when field-level validation produced
 structured issues.
 

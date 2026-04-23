@@ -4,6 +4,7 @@ import {
   login,
   createRequestAPI,
   setBalance,
+  forceFailScheduled,
   recordingContext,
 } from './fixtures';
 
@@ -131,6 +132,33 @@ test.describe('Payment validation + status transition edge cases', () => {
       data: { scheduled_payment_date: pastDate },
     });
     expect(res.status()).toBeGreaterThanOrEqual(400);
+    await senderCtx.close();
+    await payerCtx.close();
+  });
+
+  test('retry reschedule with past date rejected', async ({ browser }, testInfo) => {
+    const senderCtx = await recordingContext(browser, testInfo);
+    const payerCtx = await recordingContext(browser, testInfo);
+    const senderPage = await senderCtx.newPage();
+    const payerPage = await payerCtx.newPage();
+
+    await login(senderPage, DEMO.michael);
+    await login(payerPage, DEMO.david);
+
+    const { id } = await createRequestAPI(senderPage, {
+      recipientEmail: DEMO.david.email,
+      amountUsd: '1.00',
+    });
+    await forceFailScheduled(id);
+
+    const pastDate = new Date(Date.now() - 86_400_000).toISOString();
+    const res = await payerPage.request.post(`/api/payment-requests/${id}/retry`, {
+      data: { action: 'reschedule', scheduled_payment_date: pastDate },
+    });
+    expect(res.status()).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('INVALID_SCHEDULE_DATE');
+
     await senderCtx.close();
     await payerCtx.close();
   });

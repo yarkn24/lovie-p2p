@@ -43,14 +43,14 @@ A Venmo/Cash App-style payment request system. Users request money from others v
 
 ### Expiration
 - expires_at = created_at + 7 days
-- Cron job (hourly): SET expired=1 WHERE expires_at < NOW AND status IN (1,5) AND expired=0
+- Cron job (daily, Vercel Hobby plan): SET expired=1 WHERE expires_at < NOW AND status IN (1,5) AND expired=0
 - Page load: check and set expired=1 if overdue
 - expired=1 is permanent — never reverts
 - UI shows real-time countdown
 
 ### Scheduled Payments
 - User picks a date ≤ expires_at
-- Cron job (hourly): execute payments where scheduled_payment_date ≤ NOW AND status=5
+- Cron job (daily, Vercel Hobby plan): execute payments where scheduled_payment_date ≤ NOW AND status=5
 - On success: status=2, create payment_transaction
 - On insufficient balance: status=7, notify user "1 retry remaining"
 - Retry: Pay Now immediately or Reschedule to new date
