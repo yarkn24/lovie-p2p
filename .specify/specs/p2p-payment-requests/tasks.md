@@ -76,3 +76,17 @@
 - [x] Configure Vercel Cron
 - [x] Smoke test on production URL
 - [x] Write README
+
+## Phase 9: Post-v1 Polish
+- [x] Dashboard success banner (pay/decline/schedule) with 3s auto-dismiss
+- [x] `View details` pill on every dashboard row
+- [x] `Share` button on request detail (copy URL → `Copied` 2s feedback)
+- [x] Anonymous landing at `/requests/[id]` with preview card + sign-in / sign-up CTAs
+- [x] `GET /api/payment-requests/[id]/preview` — public preview endpoint returning minimal fields (id, amount, status, expires_at, sender_name, recipient_email)
+- [x] Middleware: signed-in users whose `public.users` row was deleted get `signOut()` + redirect to `/auth/login`
+- [x] Signup form pre-checks email → "You already have an account" before calling Supabase
+- [x] `/auth/complete-profile` page for users whose auth row exists but profile row is missing (e.g. magic-link into a stale session)
+- [x] Pay on already-expired row returns `REQUEST_EXPIRED` instead of cryptic `INVALID_STATUS`
+- [x] Third-party brand mentions (Stripe / PayPal / Venmo / Wise / Cash App) removed from repo
+- [x] 30-variant Lovie splash on `/auth/confirmed`
+- [x] Regression tests: `tests/e2e/14-new-features.spec.ts` (9 tests: preview endpoint shape + anon page + 404, view-details pill, share button, expired-pay error code, signup-exists, deleted-profile kickout, complete-profile render)

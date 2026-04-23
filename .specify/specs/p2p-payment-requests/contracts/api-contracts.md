@@ -152,6 +152,32 @@ Get request detail. Triggers single-row expiry check on load via
 
 ---
 
+### GET /api/payment-requests/:id/preview
+Public preview endpoint. No auth required — used by the anonymous landing
+page at `/requests/:id` to render "Sarah requested $X from you" for viewers
+who are not logged in (or are logged in but not sender/recipient). Returns
+only the minimum fields needed to render the CTA card. Sensitive fields
+(`note`, `sender_id`, `recipient_id`) are intentionally omitted.
+
+**Response 200**
+```json
+{
+  "id": "uuid",
+  "amount": 10000,
+  "status": 1,
+  "expires_at": "2026-04-27T10:00:00Z",
+  "sender_name": "Sarah Johnson",
+  "recipient_email": "mehmet@example.com"
+}
+```
+
+**Errors**
+| Code | HTTP | Message |
+|------|------|---------|
+| `REQUEST_NOT_FOUND` | 404 | "Payment request not found." |
+
+---
+
 ### POST /api/payment-requests/:id/pay
 Pay a request immediately. Atomic via `execute_payment_v2` RPC
 (`SELECT ... FOR UPDATE` + single transaction).
