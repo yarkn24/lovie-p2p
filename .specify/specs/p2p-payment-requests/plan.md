@@ -49,8 +49,8 @@ Dev + production both have it (this is a mock/demo app).
 
 ## Implementation Order
 1. Supabase schema + migrations + RLS + DB functions
-2. Next.js project setup (Tailwind, TanStack Query, Supabase client)
-3. Auth flow (magic link + sign-up name collection)
+2. Next.js project setup (Tailwind, Supabase client)
+3. Auth flow (email + password + sign-up name collection)
 4. API endpoints (all 10)
 5. Dashboard (incoming/outgoing tabs, filters, balance widget)
 6. Create request page
