@@ -1,0 +1,442 @@
+/* Full-screen Lovie splash — 30 variants. */
+
+.lv-full {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  z-index: 9999;
+  -webkit-font-smoothing: antialiased;
+}
+.lv-bg-black { background: #000; color: #fff; }
+.lv-bg-cream { background: #faf5f0; color: #0f172a; }
+.lv-bg-brand { background: #0546bf; color: #fff; }
+.lv-bg-ink { background: #0f172a; color: #fff; }
+.lv-bg-white { background: #fff; color: #0f172a; }
+
+.lv-font-mono { font-family: 'Space Mono', monospace; }
+.lv-font-serif { font-family: 'Playfair Display', serif; font-weight: 900; }
+.lv-font-condensed { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+.lv-font-pixel { font-family: 'Press Start 2P', monospace; }
+.lv-font-engraved { font-family: 'Cinzel', serif; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+.lv-font-script { font-family: 'Kaushan Script', cursive; }
+.lv-font-lobster { font-family: 'Lobster', cursive; }
+.lv-font-fat { font-family: 'Righteous', cursive; }
+.lv-font-blocky { font-family: 'Rubik Mono One', sans-serif; }
+.lv-font-elegant { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-style: italic; }
+.lv-font-archivo { font-family: 'Archivo Black', sans-serif; }
+.lv-font-sans { font-family: 'Instrument Sans', sans-serif; font-weight: 700; }
+
+.lv-huge { font-size: clamp(4rem, 22vw, 18rem); line-height: 0.9; }
+.lv-big  { font-size: clamp(3rem, 16vw, 14rem); line-height: 0.9; }
+.lv-mid  { font-size: clamp(3rem, 12vw, 10rem); line-height: 1; }
+.lv-pixel-size { font-size: clamp(1.5rem, 8vw, 6rem); line-height: 1.2; }
+
+/* ——— 01 typewriter ——— */
+@keyframes lv-type-in { from { width: 0; } to { width: 5ch; } }
+@keyframes lv-cursor-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.lv-type {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  width: 0;
+  animation: lv-type-in 1.3s steps(5, end) 0.2s forwards;
+}
+.lv-cursor {
+  display: inline-block;
+  width: 0.15em;
+  margin-left: 0.04em;
+  background: currentColor;
+  height: 0.85em;
+  vertical-align: baseline;
+  animation: lv-cursor-blink 0.6s infinite;
+}
+
+/* ——— 02 vault ——— */
+@keyframes lv-vault-l { to { transform: translateX(-100%); } }
+@keyframes lv-vault-r { to { transform: translateX(100%); } }
+@keyframes lv-vault-in { 0% { opacity: 0; transform: scale(0.85); } 100% { opacity: 1; transform: scale(1); } }
+.lv-vault-door {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 50vw;
+  background:
+    radial-gradient(circle at 30% 50%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 50%),
+    linear-gradient(180deg, #2a2a2a 0%, #111 50%, #2a2a2a 100%);
+  z-index: 2;
+  border: 1px solid #000;
+}
+.lv-vault-door-l { left: 0; animation: lv-vault-l 1.3s 0.4s cubic-bezier(0.86, 0, 0.07, 1) forwards; }
+.lv-vault-door-r { right: 0; animation: lv-vault-r 1.3s 0.4s cubic-bezier(0.86, 0, 0.07, 1) forwards; }
+.lv-vault-wheel {
+  position: absolute;
+  top: 50%;
+  width: clamp(60px, 12vw, 140px);
+  height: clamp(60px, 12vw, 140px);
+  border: 4px solid #666;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(circle, #333 0%, #111 100%);
+}
+.lv-vault-wheel::before, .lv-vault-wheel::after {
+  content: '';
+  position: absolute;
+  background: #888;
+  border-radius: 2px;
+}
+.lv-vault-wheel::before { top: 10%; left: 48%; width: 4%; height: 80%; }
+.lv-vault-wheel::after  { top: 48%; left: 10%; width: 80%; height: 4%; }
+.lv-vault-door-l .lv-vault-wheel { right: 8%; }
+.lv-vault-door-r .lv-vault-wheel { left: 8%; }
+.lv-vault-inner {
+  opacity: 0;
+  animation: lv-vault-in 0.9s 1s ease-out forwards;
+  z-index: 1;
+}
+
+/* ——— 03 cascade ——— */
+@keyframes lv-drop {
+  0% { transform: translateY(-110vh) rotate(-15deg); opacity: 0; }
+  70% { transform: translateY(10%) rotate(5deg); opacity: 1; }
+  85% { transform: translateY(-3%) rotate(-2deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+.lv-cascade span {
+  display: inline-block;
+  opacity: 0;
+  animation: lv-drop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ——— 04 gradient wipe ——— */
+@keyframes lv-wipe-bg { from { transform: translateX(-101%); } to { transform: translateX(0); } }
+@keyframes lv-fade-up { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+.lv-wipe-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0546bf 0%, #7928ca 100%);
+  animation: lv-wipe-bg 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 0;
+}
+.lv-wipe-text {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  animation: lv-fade-up 0.6s 0.7s ease-out forwards;
+}
+
+/* ——— 05 neon ——— */
+@keyframes lv-neon {
+  0%, 2%, 6%, 8%, 15%, 17% { opacity: 0.1; text-shadow: none; }
+  3%, 7%, 16%, 100% { opacity: 1; text-shadow: 0 0 6px currentColor, 0 0 18px currentColor, 0 0 40px #ff00a8, 0 0 80px #ff00a8; }
+}
+.lv-neon {
+  color: #ff40c8;
+  animation: lv-neon 2s forwards;
+}
+
+/* ——— 06 zoom blur ——— */
+@keyframes lv-zoom-blur {
+  0% { transform: scale(0.2); filter: blur(30px); opacity: 0; }
+  60% { filter: blur(6px); opacity: 1; }
+  100% { transform: scale(1); filter: blur(0); opacity: 1; }
+}
+.lv-zoom-blur { animation: lv-zoom-blur 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* ——— 07 split reveal ——— */
+@keyframes lv-split-in-top { 0% { transform: translateY(-0.5em); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes lv-split-in-bot { 0% { transform: translateY(0.5em); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+.lv-split-wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+}
+.lv-split-top, .lv-split-bot {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  opacity: 0;
+}
+.lv-split-base { visibility: hidden; }
+.lv-split-top { clip-path: inset(0 0 50% 0); animation: lv-split-in-top 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.lv-split-bot { clip-path: inset(50% 0 0 0); animation: lv-split-in-bot 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* ——— 08 3D flip ——— */
+@keyframes lv-3d-flip {
+  0% { transform: perspective(800px) rotateY(85deg); opacity: 0; }
+  100% { transform: perspective(800px) rotateY(0); opacity: 1; }
+}
+.lv-3d-flip { animation: lv-3d-flip 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* ——— 09 stagger pop ——— */
+@keyframes lv-pop {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.25) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+.lv-stagger span {
+  display: inline-block;
+  opacity: 0;
+  animation: lv-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ——— 10 refine ——— */
+@keyframes lv-refine {
+  0% { letter-spacing: 1.2em; opacity: 0; filter: blur(4px); }
+  100% { letter-spacing: 0; opacity: 1; filter: blur(0); }
+}
+.lv-refine { animation: lv-refine 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; display: inline-block; }
+
+/* ——— 11 glitch ——— */
+@keyframes lv-glitch {
+  0%, 100% { transform: translate(0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(3px, -3px); }
+  30% { transform: translate(-2px, -2px); }
+  40% { transform: translate(3px, 2px); }
+  55% { transform: translate(-3px, 0); }
+}
+.lv-glitch-wrap { position: relative; display: inline-block; }
+.lv-glitch-wrap::before,
+.lv-glitch-wrap::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+.lv-glitch-wrap::before {
+  color: #ff0044;
+  transform: translate(-5px, 0);
+  mix-blend-mode: screen;
+  animation: lv-glitch 0.3s steps(2) 5;
+}
+.lv-glitch-wrap::after {
+  color: #00ffff;
+  transform: translate(5px, 0);
+  mix-blend-mode: screen;
+  animation: lv-glitch 0.3s steps(2) 5 reverse;
+}
+.lv-glitch-base { animation: lv-glitch 0.3s steps(2) 5; }
+
+/* ——— 12 gold shine ——— */
+@keyframes lv-gold-sweep {
+  0% { background-position: -100% 50%; opacity: 0; transform: scale(0.9); }
+  30% { opacity: 1; transform: scale(1); }
+  100% { background-position: 200% 50%; opacity: 1; transform: scale(1); }
+}
+.lv-gold {
+  background: linear-gradient(110deg, #7a5a00 0%, #d4a017 30%, #ffe680 45%, #fff6c7 50%, #ffe680 55%, #d4a017 70%, #7a5a00 100%);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: lv-gold-sweep 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ——— 13 wave ——— */
+@keyframes lv-wave-kf {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.2em); }
+}
+.lv-wave span {
+  display: inline-block;
+  animation: lv-wave-kf 1.2s ease-in-out infinite;
+}
+
+/* ——— 14 card flip ——— */
+@keyframes lv-card-flip {
+  0% { transform: perspective(600px) rotateX(-90deg); opacity: 0; }
+  70% { transform: perspective(600px) rotateX(10deg); opacity: 1; }
+  100% { transform: perspective(600px) rotateX(0); opacity: 1; }
+}
+.lv-card-flip span {
+  display: inline-block;
+  opacity: 0;
+  transform-origin: bottom;
+  animation: lv-card-flip 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ——— 15 reel (slot machine) ——— */
+@keyframes lv-reel-spin {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(calc(-1em * var(--steps))); }
+}
+.lv-reel-wrap {
+  display: inline-flex;
+  gap: 0.05em;
+}
+.lv-reel {
+  display: inline-block;
+  overflow: hidden;
+  height: 1em;
+  line-height: 1;
+  vertical-align: bottom;
+}
+.lv-reel-inner {
+  display: flex;
+  flex-direction: column;
+  animation: lv-reel-spin 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.lv-reel-inner > * { height: 1em; line-height: 1; }
+
+/* ——— 16 curtain ——— */
+@keyframes lv-curtain-l { to { transform: translateX(-100%); } }
+@keyframes lv-curtain-r { to { transform: translateX(100%); } }
+.lv-curtain {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 51vw;
+  z-index: 2;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 22px),
+    linear-gradient(90deg, #7f1d1d, #b91c1c, #991b1b);
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.5);
+}
+.lv-curtain-l { left: 0; animation: lv-curtain-l 1.1s 0.3s cubic-bezier(0.6, 0, 0.4, 1) forwards; }
+.lv-curtain-r { right: 0; animation: lv-curtain-r 1.1s 0.3s cubic-bezier(0.6, 0, 0.4, 1) forwards; }
+
+/* ——— 17 zipper (top/bottom close in, then open) ——— */
+@keyframes lv-zip-top { to { transform: translateY(-100%); } }
+@keyframes lv-zip-bot { to { transform: translateY(100%); } }
+.lv-zip-panel {
+  position: absolute;
+  left: 0; right: 0;
+  height: 50%;
+  background: #0f172a;
+  z-index: 2;
+}
+.lv-zip-top { top: 0; animation: lv-zip-top 1.1s 0.4s cubic-bezier(0.6, 0, 0.4, 1) forwards; }
+.lv-zip-bot { bottom: 0; animation: lv-zip-bot 1.1s 0.4s cubic-bezier(0.6, 0, 0.4, 1) forwards; }
+
+/* ——— 18 ink bleed ——— */
+@keyframes lv-ink {
+  0% { filter: blur(35px); opacity: 0; letter-spacing: 0.3em; }
+  60% { opacity: 1; }
+  100% { filter: blur(0); opacity: 1; letter-spacing: 0; }
+}
+.lv-ink { animation: lv-ink 1.6s ease-out forwards; display: inline-block; }
+
+/* ——— 19 handwriting ——— */
+@keyframes lv-write {
+  0% { opacity: 0; transform: translateX(-6px) rotate(-8deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0); }
+}
+.lv-handwrite span {
+  display: inline-block;
+  opacity: 0;
+  animation: lv-write 0.25s ease-out forwards;
+}
+
+/* ——— 20 terminal ——— */
+.lv-term { color: #22c55e; background: #000; }
+.lv-term-line { display: inline-block; }
+.lv-term-prompt::before {
+  content: '> ';
+  color: #22c55e;
+  opacity: 0.7;
+}
+
+/* ——— 21 spotlight ——— */
+@keyframes lv-spot-reveal {
+  0% { clip-path: circle(0% at 10% 50%); }
+  60% { clip-path: circle(60% at 50% 50%); }
+  100% { clip-path: circle(150% at 90% 50%); }
+}
+.lv-spotlight {
+  animation: lv-spot-reveal 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ——— 22 paper fold ——— */
+@keyframes lv-fold {
+  0% { transform: perspective(900px) rotateX(-90deg); transform-origin: bottom; opacity: 0; }
+  100% { transform: perspective(900px) rotateX(0); opacity: 1; }
+}
+.lv-fold { animation: lv-fold 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards; display: inline-block; }
+
+/* ——— 23 elastic ——— */
+@keyframes lv-elastic {
+  0% { transform: scale(0, 2); opacity: 0; }
+  40% { transform: scale(1.4, 0.6); opacity: 1; }
+  60% { transform: scale(0.8, 1.2); }
+  80% { transform: scale(1.1, 0.95); }
+  100% { transform: scale(1, 1); }
+}
+.lv-elastic { animation: lv-elastic 1.1s ease-out forwards; display: inline-block; }
+
+/* ——— 24 scramble (uses JS-driven chars, no CSS needed beyond base) ——— */
+.lv-scramble {
+  display: inline-block;
+  letter-spacing: 0.02em;
+}
+
+/* ——— 25 marquee slide ——— */
+@keyframes lv-marquee {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(0); }
+}
+.lv-marquee { animation: lv-marquee 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; display: inline-block; }
+
+/* ——— 26 heartbeat ——— */
+@keyframes lv-beat {
+  0% { transform: scale(0.9); opacity: 0; }
+  15% { transform: scale(1); opacity: 1; }
+  25% { transform: scale(1.15); }
+  35% { transform: scale(1); }
+  45% { transform: scale(1.2); }
+  60% { transform: scale(1); }
+}
+.lv-beat { animation: lv-beat 1.8s ease-out forwards; display: inline-block; }
+
+/* ——— 27 smoke ——— */
+@keyframes lv-smoke {
+  0% { filter: blur(25px) brightness(0.5); opacity: 0; transform: translateY(20px) scale(0.95); }
+  100% { filter: blur(0) brightness(1); opacity: 1; transform: translateY(0) scale(1); }
+}
+.lv-smoke { animation: lv-smoke 1.6s ease-out forwards; display: inline-block; }
+
+/* ——— 28 rainbow gradient shift ——— */
+@keyframes lv-rainbow {
+  0% { background-position: 0% 50%; transform: scale(0.85); opacity: 0; }
+  25% { opacity: 1; transform: scale(1); }
+  100% { background-position: 300% 50%; transform: scale(1); opacity: 1; }
+}
+.lv-rainbow {
+  background: linear-gradient(90deg, #ff0080, #7928ca, #0546bf, #00d4ff, #00ff94, #ffd36d, #ff0080, #7928ca, #0546bf);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: lv-rainbow 2.3s ease-in-out forwards;
+}
+
+/* ——— 29 origami ——— */
+@keyframes lv-origami {
+  0% { transform: perspective(700px) rotateY(180deg) rotateX(30deg); opacity: 0; }
+  100% { transform: perspective(700px) rotateY(0) rotateX(0); opacity: 1; }
+}
+.lv-origami { animation: lv-origami 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; display: inline-block; }
+
+/* ——— 30 liquid fill ——— */
+@keyframes lv-liquid {
+  0% { background-size: 100% 0%; }
+  100% { background-size: 100% 110%; }
+}
+.lv-liquid {
+  color: transparent;
+  -webkit-text-stroke: 2px #0546bf;
+  background: linear-gradient(180deg, #065b98 0%, #0546bf 100%);
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: 100% 0%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: lv-liquid 1.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  display: inline-block;
+  text-shadow: none;
+}
+
+/* shared fade-out when splash dismisses */
+@keyframes lv-fade-out { to { opacity: 0; } }
+.lv-leaving { animation: lv-fade-out 0.3s ease-out forwards; }
