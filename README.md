@@ -8,7 +8,7 @@ Built spec-first using [GitHub Spec-Kit](https://github.com/github/spec-kit),
 implemented with Claude Code, deployed on Vercel + Supabase.
 
 - **Live demo**: https://lovie-p2p-gules.vercel.app
-- **Spec**: [`.specify/specs/p2p-payment-requests/spec.md`](../.specify/specs/p2p-payment-requests/spec.md)
+- **Spec**: [`.specify/specs/p2p-payment-requests/spec.md`](.specify/specs/p2p-payment-requests/spec.md)
 
 > **Note on emails:** notifications are sent via the Resend sandbox address
 > `onboarding@resend.dev` (no verified production domain for this demo). Gmail
@@ -93,11 +93,12 @@ Safe to re-run. Wipes existing demo payment rows and re-creates 30 requests.
 
 ## E2E tests
 
-Playwright suite of **12 spec files** covering the 5 core flows plus extended
-coverage: auth-negative, payment edge cases, authorization (RLS), security
-(XSS/SQLi), concurrency / race conditions, API contract, and responsive
-mobile. Two projects run in series — Desktop Chrome (full suite) and Mobile
-Chrome / Pixel 5 (core flows + responsive spec).
+Playwright suite of **13 spec files · 88 tests** covering the 5 core flows plus
+extended coverage: auth-negative, payment edge cases, authorization (RLS),
+security (XSS/SQLi), concurrency / race conditions, API contract, responsive
+mobile, and UI/UX states (loading/disabled/empty/error). Two projects run in
+series — Desktop Chrome (full suite) and Mobile Chrome / Pixel 5 (core flows +
+responsive spec). Latest run: **88 passed · 0 skipped · 0 failed · 0 flaky**.
 
 ```bash
 npm install                      # installs @playwright/test
@@ -115,7 +116,7 @@ against a local server.
 `playwright-report/` and `test-results/` on every run.
 
 - **Test report** (per-path pass/fail, architecture notes): [`tests/e2e/REPORT.md`](tests/e2e/REPORT.md)
-- **Screen recordings** (full videos, public): https://drive.google.com/drive/folders/16bG4spJodfVzBeGS76KPIzssbEOsAh48
+- **Screen recordings** (full videos, public — 121 webm from the latest clean run): https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg
 
 ## Project structure
 
