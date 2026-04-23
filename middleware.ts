@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { unauthorized } from '@/lib/errors';
 
 // H9: whitelist auth paths; protect every other page by default.
-const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/confirmed'];
-const PUBLIC_API_PATHS = ['/api/auth/check-email'];
+const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/confirmed', '/auth/complete-profile'];
+const PUBLIC_API_PATHS = ['/api/auth/check-email', '/api/auth/user', '/api/auth/logout'];
 
 function isPublic(pathname: string): boolean {
   if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true;
@@ -38,6 +38,25 @@ export async function middleware(request: NextRequest) {
     // API routes return 401 JSON; pages redirect to login
     if (pathname.startsWith('/api/')) return unauthorized();
     return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  // If user is authenticated but has no profile row, kick them out. A deleted
+  // user must not be able to view protected pages just because their JWT is
+  // still valid. `/auth/*` paths are whitelisted so the user can log in/out.
+  if (user && !isPublic(pathname)) {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile) {
+      await supabase.auth.signOut();
+      if (pathname.startsWith('/api/')) return unauthorized();
+      const loginUrl = new URL('/auth/login', request.url);
+      loginUrl.searchParams.set('error', 'Account+no+longer+exists');
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   if (user && (pathname === '/auth/login' || pathname === '/auth/signup')) {

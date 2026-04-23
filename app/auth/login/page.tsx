@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -17,12 +17,19 @@ function LoginInner() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   const pinnedEmail = searchParams.get('email') || '';
+  const errorParam = searchParams.get('error');
 
   const [email, setEmail] = useState(pinnedEmail);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(
+    errorParam ? { kind: 'err', text: errorParam.replace(/\+/g, ' ') } : null
+  );
   const supabase = createClient();
+
+  useEffect(() => {
+    if (errorParam) setMessage({ kind: 'err', text: errorParam.replace(/\+/g, ' ') });
+  }, [errorParam]);
 
   const handlePassword = async (e: React.FormEvent) => {
     e.preventDefault();
