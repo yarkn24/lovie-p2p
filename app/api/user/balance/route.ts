@@ -53,14 +53,22 @@ export async function POST(request: NextRequest) {
     ]);
   }
 
-  const delta = action === 'add' ? amountInCents : -amountInCents;
   const admin = createAdminClient();
 
-  // Atomic: adjust_balance runs a single UPDATE with a balance+delta >= 0
-  // guard and RAISEs INSUFFICIENT_BALANCE when the invariant would break.
-  // Replaces the prior read-compute-write (which races under concurrency)
-  // and the Math.max(0, …) silent clamp (which hid errors rather than
-  // surfacing them as a structured error to the caller).
+  // For the demo Add/Sub buttons: subtract clamps to zero (never negative).
+  // Read-then-RPC has a small race, but the RPC still enforces balance >= 0
+  // so worst case is a retriable error, not a bad-state write. `pay` / retry
+  // paths still use adjust_balance directly and surface INSUFFICIENT_BALANCE.
+  let delta: number;
+  if (action === 'add') {
+    delta = amountInCents;
+  } else {
+    const { data: cur } = await admin.from('users').select('balance').eq('id', user.id).single();
+    const bal = cur?.balance ?? 0;
+    if (bal === 0) return NextResponse.json({ balance: 0 });
+    delta = -Math.min(amountInCents, bal);
+  }
+
   const { data: newBalance, error: rpcErr } = await admin.rpc('adjust_balance', {
     p_user_id: user.id,
     p_delta: delta,
