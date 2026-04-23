@@ -54,21 +54,21 @@
 - [x] Column-immutability trigger on `payment_requests` (amount, sender_id, note, recipient_email, created_at)
 
 ## Phase 7: Testing
-- [ ] Playwright setup + test user seed
-- [ ] Test: create request (registered recipient)
-- [ ] Test: create request (unregistered → email)
-- [ ] Test: pay now → balance updated
-- [ ] Test: schedule → execute → balance updated
-- [ ] Test: scheduled fails (insufficient balance) → retry
-- [ ] Test: expiration → pay blocked
-- [ ] Test: repeat after decline → new request
-- [ ] Test: repeat twice → button disabled
-- [ ] Test: shareable link (unregistered) → sign up flow
-- [ ] Test: decline → repeat available
-- [ ] Test: cancel (sender) → status cancelled
-- [ ] Test: countdown timer
-- [ ] Test: bad words memo validation
-- [ ] Test: dashboard filters
+- [x] Playwright setup + test user seed
+- [x] Test: create request (registered recipient)
+- [x] Test: create request (unregistered → email)
+- [x] Test: pay now → balance updated
+- [x] Test: schedule → execute → balance updated
+- [x] Test: scheduled fails (insufficient balance) → retry
+- [x] Test: expiration → pay blocked
+- [x] Test: repeat after decline → new request
+- [x] Test: repeat twice → button disabled
+- [x] Test: shareable link (unregistered) → sign up flow
+- [x] Test: decline → repeat available
+- [x] Test: cancel (sender) → status cancelled
+- [x] Test: countdown timer
+- [x] Test: bad words memo validation
+- [x] Test: dashboard filters
 
 ## Phase 8: Deploy
 - [x] Deploy to Vercel

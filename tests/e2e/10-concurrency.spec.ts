@@ -5,6 +5,7 @@ import {
   createRequestAPI,
   setBalance,
   getBalanceCents,
+  forceFailScheduled,
   recordingContext,
 } from './fixtures';
 
@@ -207,5 +208,82 @@ test.describe('Concurrency / race conditions', () => {
 
     await senderCtx.close();
     await payerCtx.close();
+  });
+
+  test('double retry pay_now — exactly one succeeds, balance debited once', async ({ browser }, testInfo) => {
+    // H1 coverage: execute_retry_payment_v2 must lock the row (SELECT...FOR
+    // UPDATE) and reject a second concurrent retry that observes the same
+    // status=7. Prior admin-client sequence had a read-check-write race
+    // window where both retries could pass the balance check.
+    const senderCtx = await recordingContext(browser, testInfo);
+    const payerCtxA = await recordingContext(browser, testInfo);
+    const payerCtxB = await recordingContext(browser, testInfo);
+    const senderPage = await senderCtx.newPage();
+    const payerA = await payerCtxA.newPage();
+    const payerB = await payerCtxB.newPage();
+
+    await login(senderPage, DEMO.david);
+    await login(payerA, DEMO.michael);
+    await login(payerB, DEMO.michael);
+
+    await setBalance(payerA, 100_000);
+    const startBalance = await getBalanceCents(payerA);
+
+    const { id } = await createRequestAPI(senderPage, {
+      recipientEmail: DEMO.michael.email,
+      amountUsd: '7.50',
+    });
+    // Move the request into the failed state the retry endpoint requires.
+    await forceFailScheduled(id);
+
+    const [resA, resB] = await Promise.all([
+      payerA.request.post(`/api/payment-requests/${id}/retry`, {
+        data: { action: 'pay_now' },
+      }),
+      payerB.request.post(`/api/payment-requests/${id}/retry`, {
+        data: { action: 'pay_now' },
+      }),
+    ]);
+
+    const successes = [resA.ok(), resB.ok()].filter(Boolean).length;
+    expect(successes).toBe(1);
+
+    const endBalance = await getBalanceCents(payerA);
+    expect(startBalance - endBalance).toBe(750);
+
+    const view = await senderPage.request.get(`/api/payment-requests/${id}`);
+    const body = await view.json();
+    expect(body.status).toBe(2);
+
+    await senderCtx.close();
+    await payerCtxA.close();
+    await payerCtxB.close();
+  });
+
+  test('parallel balance add/subtract — net delta matches sequential math', async ({ browser }, testInfo) => {
+    // H3 coverage: adjust_balance RPC runs a single UPDATE with a
+    // non-negative guard, so concurrent add/subtract calls must settle to
+    // the exact sequential net delta (no lost updates from the prior
+    // read-compute-write path).
+    const ctx = await recordingContext(browser, testInfo);
+    const page = await ctx.newPage();
+    await login(page, DEMO.sarah);
+
+    await setBalance(page, 100_000);
+    const start = await getBalanceCents(page);
+
+    const N = 6;
+    const ops = [];
+    for (let i = 0; i < N; i++) {
+      ops.push(page.request.post('/api/user/balance', { data: { action: 'add', amount: 10 } }));
+      ops.push(page.request.post('/api/user/balance', { data: { action: 'subtract', amount: 5 } }));
+    }
+    const results = await Promise.all(ops);
+    for (const r of results) expect(r.ok()).toBeTruthy();
+
+    const end = await getBalanceCents(page);
+    expect(end - start).toBe(N * 1000 - N * 500);
+
+    await ctx.close();
   });
 });

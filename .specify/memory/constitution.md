@@ -19,7 +19,7 @@ Payment transactions table provides audit log and duplicate prevention.
 
 ### IV. Expiration Integrity — Double Layer
 Layer 1: Page load checks `expires_at < NOW()` → sets `expired = 1`.
-Layer 2: Hourly cron job bulk-updates all overdue requests.
+Layer 2: Daily cron job bulk-updates all overdue requests (Vercel Hobby plan — daily maximum).
 Both layers use `AND expired = 0` guard to stay idempotent.
 
 ### V. Test Coverage
@@ -31,7 +31,7 @@ Each test resets balance via Supabase admin client before running.
 
 - **Framework:** Next.js (App Router)
 - **Database:** Supabase (PostgreSQL + RLS)
-- **Auth:** Supabase magic link (email-based)
+- **Auth:** Supabase email + password
 - **Styling:** Tailwind CSS
 - **Testing:** Playwright E2E
 - **Deployment:** Vercel

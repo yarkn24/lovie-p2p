@@ -9,8 +9,15 @@ export async function POST(request: NextRequest) {
   if (!user) return unauthorized();
 
   const body = await request.json().catch(() => null);
-  const firstName = body?.first_name?.trim();
-  const lastName = body?.last_name?.trim();
+  // Strip CR/LF/NUL to prevent header/CRLF injection when the name is later
+  // interpolated into outbound email subjects and HTML templates. Cap at 100
+  // chars to bound DB + email template payload size.
+  const clean = (v: unknown) =>
+    typeof v === 'string'
+      ? v.replace(/[\r\n\x00]/g, '').trim().slice(0, 100)
+      : '';
+  const firstName = clean(body?.first_name);
+  const lastName = clean(body?.last_name);
 
   if (!firstName || !lastName) {
     return badRequest('MISSING_FIELD', 'first_name and last_name are required.');

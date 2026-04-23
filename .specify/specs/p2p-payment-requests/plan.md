@@ -1,15 +1,13 @@
 # Implementation Plan: P2P Payment Requests
 
 ## Tech Stack
-- **Framework:** Next.js 14 (App Router)
+- **Framework:** Next.js 16 (App Router, Turbopack, React 19)
 - **Database:** Supabase (PostgreSQL + RLS)
-- **Auth:** Supabase magic link
-- **Styling:** Tailwind CSS
-- **Forms:** React Hook Form
-- **State:** TanStack Query
+- **Auth:** Supabase email + password
+- **Styling:** Tailwind CSS v4
 - **Testing:** Playwright E2E
 - **Deployment:** Vercel
-- **Cron:** Vercel Cron Functions
+- **Cron:** Vercel Cron Functions (Hobby plan — daily)
 
 ## API Endpoints
 ```
@@ -37,9 +35,9 @@ run inside a single PostgreSQL function call. Never split across multiple API ca
 2. sender_id or recipient_id matches auth.uid() (role-dependent)
 3. Business rule check (status, expired, repeated flags)
 
-### Cron Jobs (Vercel Cron)
-- Hourly: expire pending/scheduled requests past expires_at
-- Hourly: execute scheduled payments at their scheduled_payment_date
+### Cron Jobs (Vercel Cron, Hobby plan — daily maximum)
+- Daily: expire pending/scheduled requests past expires_at
+- Daily: execute scheduled payments at their scheduled_payment_date
 
 ### Shareable Link Privacy
 /requests/[UUID]: gated by login.

@@ -132,7 +132,7 @@ app/
 │   ├── validation.ts    # Email, bad-words, note length
 │   └── supabase/        # server, client, admin (service-role)
 ├── scripts/seed.mjs     # Demo users + mock payments
-├── supabase/migrations/ # 10 migrations (schema, RPCs, failure_reason, RLS fixes, profile-read RLS, phone columns, column-immutability trigger, atomic payment RPC)
+├── supabase/migrations/ # 13 migrations (schema, RPCs, failure_reason, RLS fixes, phone columns, notifications, column-immutability trigger, atomic payment RPC, atomic retry RPC, users-SELECT own-row only)
 └── vercel.json          # Cron schedules
 ```
 

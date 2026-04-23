@@ -70,62 +70,39 @@ export async function POST(
   const admin = createAdminClient();
 
   if (action === 'pay_now') {
-    const { data: payerProfile, error: balErr } = await admin
-      .from('users')
-      .select('balance')
-      .eq('id', user.id)
-      .single();
-
-    if (balErr || !payerProfile) return internalError('Could not fetch balance.');
-
-    if (payerProfile.balance < paymentReq.amount) {
-      return badRequest(
-        'INSUFFICIENT_BALANCE',
-        'Your balance is insufficient to complete this payment.'
-      );
-    }
-
-    // Deduct from payer
-    const { error: deductErr } = await admin
-      .from('users')
-      .update({ balance: payerProfile.balance - paymentReq.amount, updated_at: new Date().toISOString() })
-      .eq('id', user.id);
-
-    if (deductErr) return internalError(deductErr.message);
-
-    // Credit sender
-    const { data: senderProfile } = await admin
-      .from('users')
-      .select('balance')
-      .eq('id', paymentReq.sender_id)
-      .single();
-
-    if (senderProfile) {
-      await admin
-        .from('users')
-        .update({ balance: senderProfile.balance + paymentReq.amount, updated_at: new Date().toISOString() })
-        .eq('id', paymentReq.sender_id);
-    }
-
-    // Record transaction
-    await admin.from('payment_transactions').insert({
-      request_id: id,
-      from_user_id: user.id,
-      to_user_id: paymentReq.sender_id,
-      amount: paymentReq.amount,
-      transaction_type: 'manual_pay',
-      status: 'success',
-      paid_at: new Date().toISOString(),
+    // Atomic via execute_retry_payment_v2 — SELECT ... FOR UPDATE + all
+    // mutations in a single transaction. Prevents partial-failure states
+    // (e.g. payer deducted but status not flipped) and double-retry races.
+    const { error: rpcErr } = await admin.rpc('execute_retry_payment_v2', {
+      p_request_id: id,
+      p_payer_id: user.id,
     });
 
-    const { data: updated, error: updateErr } = await admin
-      .from('payment_requests')
-      .update({ status: 2, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+    if (rpcErr) {
+      const msg = rpcErr.message ?? '';
+      if (msg.includes('INSUFFICIENT_BALANCE')) {
+        return badRequest('INSUFFICIENT_BALANCE', 'Your balance is insufficient to complete this payment.');
+      }
+      if (msg.includes('INVALID_STATUS')) {
+        return conflict('INVALID_STATUS', 'Request is no longer in a failed state.');
+      }
+      if (msg.includes('REQUEST_EXPIRED')) {
+        return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
+      }
+      if (msg.includes('REQUEST_NOT_FOUND')) {
+        return notFound('REQUEST_NOT_FOUND', 'Payment request not found.');
+      }
+      if (msg.includes('FORBIDDEN_NOT_RECIPIENT')) {
+        return forbidden('FORBIDDEN_NOT_RECIPIENT', 'Only the recipient can retry this request.');
+      }
+      return internalError(msg || 'Retry payment failed.');
+    }
 
-    if (updateErr) return internalError(updateErr.message);
+    const { data: updated } = await admin
+      .from('payment_requests')
+      .select('*')
+      .eq('id', id)
+      .single();
 
     return NextResponse.json(updated);
   }
@@ -161,6 +138,9 @@ export async function POST(
     );
   }
 
+  // CAS guard: only transition status=7 → 5. If a concurrent request has
+  // already moved this row (repeat, re-retry, expire), .maybeSingle() returns
+  // null and we surface 409 rather than silently overwriting.
   const { data: updated, error: updateError } = await admin
     .from('payment_requests')
     .update({
@@ -169,10 +149,17 @@ export async function POST(
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
+    .eq('status', 7)
     .select()
-    .single();
+    .maybeSingle();
 
   if (updateError) return internalError(updateError.message);
+  if (!updated) {
+    return conflict(
+      'INVALID_STATUS',
+      'Request is no longer in a failed state.'
+    );
+  }
 
   return NextResponse.json(updated);
 }

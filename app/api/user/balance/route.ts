@@ -56,26 +56,30 @@ export async function POST(request: NextRequest) {
   const delta = action === 'add' ? amountInCents : -amountInCents;
   const admin = createAdminClient();
 
-  const { data: current } = await admin
-    .from('users')
-    .select('balance')
-    .eq('id', user.id)
-    .single();
+  // Atomic: adjust_balance runs a single UPDATE with a balance+delta >= 0
+  // guard and RAISEs INSUFFICIENT_BALANCE when the invariant would break.
+  // Replaces the prior read-compute-write (which races under concurrency)
+  // and the Math.max(0, …) silent clamp (which hid errors rather than
+  // surfacing them as a structured error to the caller).
+  const { data: newBalance, error: rpcErr } = await admin.rpc('adjust_balance', {
+    p_user_id: user.id,
+    p_delta: delta,
+  });
 
-  if (!current) return notFound('USER_NOT_FOUND', 'User not found.');
-
-  const newBalance = Math.max(0, current.balance + delta);
-
-  const { data: updated, error: updateErr } = await admin
-    .from('users')
-    .update({ balance: newBalance, updated_at: new Date().toISOString() })
-    .eq('id', user.id)
-    .select('balance')
-    .single();
-
-  if (updateErr || !updated) {
-    return internalError('Failed to update balance.');
+  if (rpcErr) {
+    const msg = rpcErr.message ?? '';
+    if (msg.includes('INSUFFICIENT_BALANCE')) {
+      return badRequest(
+        'INSUFFICIENT_BALANCE',
+        'Your balance is insufficient for this adjustment.'
+      );
+    }
+    return internalError(msg || 'Failed to update balance.');
   }
 
-  return NextResponse.json({ balance: updated.balance });
+  if (newBalance === null || newBalance === undefined) {
+    return notFound('USER_NOT_FOUND', 'User not found.');
+  }
+
+  return NextResponse.json({ balance: newBalance });
 }

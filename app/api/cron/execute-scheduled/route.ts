@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { unauthorized, internalError } from '@/lib/errors';
 import { sendScheduledPaymentFailedEmail } from '@/lib/email';
@@ -40,8 +41,9 @@ export async function GET(request: NextRequest) {
       ;(async () => {
         const payerId = req.recipient_id;
         if (!payerId) return;
-        const { data: payer } = await supabase.from('users').select('email').eq('id', payerId).single();
-        const { data: sender } = await supabase.from('users').select('first_name, last_name').eq('id', req.sender_id).single();
+        const admin = createAdminClient();
+        const { data: payer } = await admin.from('users').select('email').eq('id', payerId).single();
+        const { data: sender } = await admin.from('users').select('first_name, last_name').eq('id', req.sender_id).single();
         if (payer?.email && sender) {
           await sendScheduledPaymentFailedEmail({
             payerEmail: payer.email,
