@@ -27,6 +27,15 @@ type PaymentRequest = {
 
 type Me = { id: string; email: string; first_name: string; last_name: string; balance: number };
 
+type AnonPreview = {
+  id: string;
+  amount: number;
+  status: number;
+  expires_at: string;
+  sender_name: string;
+  recipient_email: string;
+};
+
 const STATUS: Record<number, { label: string; chip: string }> = {
   1: { label: 'Pending', chip: 'chip-pending' },
   2: { label: 'Paid', chip: 'chip-paid' },
@@ -78,6 +87,8 @@ export default function RequestDetail() {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [req, setReq] = useState<PaymentRequest | null>(null);
+  const [anon, setAnon] = useState<AnonPreview | null>(null);
+  const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -86,13 +97,26 @@ export default function RequestDetail() {
 
   useEffect(() => {
     (async () => {
-      const [uRes, rRes] = await Promise.all([
-        fetch('/api/auth/user', { credentials: 'include' }),
-        fetch(`/api/payment-requests/${id}`, { credentials: 'include' }),
-      ]);
-      if (!uRes.ok) return router.push('/auth/login');
-      setMe(await uRes.json());
-      if (rRes.ok) setReq(await rRes.json());
+      const uRes = await fetch('/api/auth/user', { credentials: 'include' });
+      if (!uRes.ok) {
+        // Anonymous viewer — show public preview with sign-in / sign-up CTAs.
+        const pRes = await fetch(`/api/payment-requests/${id}/preview`);
+        if (pRes.ok) setAnon(await pRes.json());
+        setLoading(false);
+        return;
+      }
+      const meData = await uRes.json();
+      setMe(meData);
+
+      const rRes = await fetch(`/api/payment-requests/${id}`, { credentials: 'include' });
+      if (rRes.status === 403) {
+        // Authenticated but neither sender nor recipient — fall back to preview.
+        const pRes = await fetch(`/api/payment-requests/${id}/preview`);
+        if (pRes.ok) setAnon(await pRes.json());
+        setForbidden(true);
+      } else if (rRes.ok) {
+        setReq(await rRes.json());
+      }
       setLoading(false);
     })();
   }, [id, router]);
@@ -140,6 +164,46 @@ export default function RequestDetail() {
       <Shell user={me}>
         <div className="max-w-3xl mx-auto p-10 flex justify-center"><img src="/lovie-logo.png" alt="Loading" width={48} height={48} className="lovie-loading" /></div>
       </Shell>
+    );
+  }
+
+  // Anonymous or forbidden-authenticated viewer: show a public preview with
+  // sign-in / sign-up CTAs (Wise-style "Sarah requested $X from you").
+  if (anon && !req) {
+    const status = STATUS[anon.status] ?? { label: 'Unknown', chip: 'chip-expired' };
+    const redirectParam = `redirect=${encodeURIComponent(`/requests/${anon.id}`)}`;
+    const emailParam = anon.recipient_email ? `&email=${encodeURIComponent(anon.recipient_email)}` : '';
+    const loginHref = `/auth/login?${redirectParam}${emailParam}`;
+    const signupHref = `/auth/signup?${redirectParam}${emailParam}`;
+    return (
+      <div className="min-h-screen grid place-items-center px-6 bg-[var(--color-cream)]">
+        <div className="card w-full max-w-md p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-[var(--color-brand)] grid place-items-center mx-auto mb-5">
+            <span className="text-white font-bold text-lg">L</span>
+          </div>
+          <div className={`chip ${status.chip} mb-4`}>{status.label}</div>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
+            {anon.sender_name} requested
+          </h1>
+          <div className="text-5xl font-bold text-[var(--color-ink)] my-3 tracking-tight">
+            {fmtUSD(anon.amount)}
+          </div>
+          <p className="text-sm text-[var(--color-muted)]">
+            {forbidden
+              ? "You don't have access to this request. Sign in with the recipient account to view."
+              : 'Sign in or create a free account to pay, decline, or schedule this request.'}
+          </p>
+          {anon.recipient_email && (
+            <p className="text-xs text-[var(--color-muted)] mt-3">
+              Sent to <span className="font-medium text-[var(--color-ink)]">{anon.recipient_email}</span>
+            </p>
+          )}
+          <div className="flex gap-3 mt-6 justify-center">
+            <Link href={loginHref} className="btn-brand flex-1">Sign in</Link>
+            <Link href={signupHref} className="btn-ghost flex-1">Create account</Link>
+          </div>
+        </div>
+      </div>
     );
   }
 

@@ -10,6 +10,9 @@ function isPublic(pathname: string): boolean {
   if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true;
   if (PUBLIC_API_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) return true;
   if (/^\/requests\/[^/]+\/share$/.test(pathname)) return true;
+  // Request detail pages — anonymous users see a public preview with sign-in/up CTAs.
+  if (/^\/requests\/[^/]+$/.test(pathname)) return true;
+  if (/^\/api\/payment-requests\/[^/]+\/preview$/.test(pathname)) return true;
   return false;
 }
 
