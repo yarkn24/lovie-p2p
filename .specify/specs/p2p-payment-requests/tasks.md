@@ -11,12 +11,12 @@
 - [x] Write trigger: handle_new_user() → backfill recipient_id on signup
 
 ## Phase 2: Next.js Setup
-- [x] Init Next.js 15 project (App Router, TypeScript, Tailwind)
+- [x] Init Next.js 16 project (App Router, TypeScript, Tailwind)
 - [x] Install dependencies (Supabase SSR, sharp)
 - [x] Configure Supabase client (server + browser)
 
 ## Phase 3: Auth
-- [x] Magic link login page
+- [x] Email + password login page
 - [x] Auth callback handler
 - [x] Sign-up page (first_name, last_name collection)
 - [x] Auth middleware (protected routes)

@@ -52,11 +52,11 @@ A Venmo/Cash App-style payment request system. Users request money from others v
 - User picks a date ≤ expires_at
 - Cron job (daily, Vercel Hobby plan): execute payments where scheduled_payment_date ≤ NOW AND status=5
 - On success: status=2, create payment_transaction
-- On insufficient balance: status=7, notify user "1 retry remaining"
+- On insufficient balance: status=7, send failure email to recipient; UI shows failure banner with retry option
 - Retry: Pay Now immediately or Reschedule to new date
 
 ### Repeat Request
-- Only if status=3 (declined) AND repeated=0
+- Only if status=3 (declined) or status=7 (failed), AND repeated=0
 - Creates brand new request (new UUID, new expires_at)
 - Sets old request repeated=1 (immutable)
 - Only sender can trigger

@@ -3,9 +3,9 @@
 - Target: https://lovie-p2p-gules.vercel.app
 - Runner: Playwright 1.59.1 (chromium + Mobile Chrome / Pixel 5, 1 worker, fullyParallel=false)
 - Run date: 2026-04-23 (clean full-suite after CAS race fix, UI/UX spec, Path 5/6 wired to real state transitions)
-- **Latest full run**: **90 passed · 0 skipped · 0 failed · 0 flaky** · ~6m
+- **Latest full run**: **91 passed · 0 skipped · 0 failed · 0 flaky** · ~6m
 - **Core suite**: 15/15 executable paths pass · 1 bonus guardrail · 0 skipped
-- **Extensive suite**: 54/54 pass across 8 spec files (auth negatives, validation, authz, security, concurrency ×6, API contract, responsive, UI/UX ×13)
+- **Extensive suite**: 55/55 pass across 8 spec files (auth negatives, validation, authz, security, concurrency ×8, API contract, responsive, UI/UX ×13)
 - **UI/UX coverage**: 13 tests asserting loading spinners, disabled button transitions, error/success banners, empty states, focus management, form validation feedback, and confirmation modals ([13-ui-ux.spec.ts](13-ui-ux.spec.ts)).
 - Video: `video: 'on'` in config for `page`-fixture tests; manually-created contexts use `recordingContext()` helper ([fixtures.ts:80-88](fixtures.ts#L80-L88)).
 - **Drive (public, clean run 2026-04-23 — 15/15 core, 88/88 total)**: https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg (121 webm, 25 MiB)
