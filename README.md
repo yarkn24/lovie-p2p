@@ -93,12 +93,14 @@ Safe to re-run. Wipes existing demo payment rows and re-creates 30 requests.
 
 ## E2E tests
 
-Playwright suite of **13 spec files · 91 tests** covering the 5 core flows plus
+Playwright suite of **14 spec files · 100 tests** covering the 5 core flows plus
 extended coverage: auth-negative, payment edge cases, authorization (RLS),
 security (XSS/SQLi), concurrency / race conditions, API contract, responsive
-mobile, and UI/UX states (loading/disabled/empty/error). Two projects run in
-series — Desktop Chrome (full suite) and Mobile Chrome / Pixel 5 (core flows +
-responsive spec). Latest run: **91 passed · 0 skipped · 0 failed · 0 flaky**.
+mobile, UI/UX states, and post-v1 features (public preview, deleted-profile
+kickout, complete-profile, share button, view-details pill, expired-pay). Two
+projects run in series — Desktop Chrome (full suite) and Mobile Chrome /
+Pixel 5 (core flows + responsive spec). Latest run: **100 passed · 0 skipped
+· 0 failed · 0 flaky**.
 
 ```bash
 npm install                      # installs @playwright/test
