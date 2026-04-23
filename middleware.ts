@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { unauthorized } from '@/lib/errors';
 
 // H9: whitelist auth paths; protect every other page by default.
-const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/confirmed', '/auth/complete-profile'];
+const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/callback', '/auth/confirm', '/auth/confirmed', '/auth/complete-profile'];
 const PUBLIC_API_PATHS = ['/api/auth/check-email', '/api/auth/user', '/api/auth/logout'];
 
 function isPublic(pathname: string): boolean {
