@@ -4,28 +4,28 @@
 
 ### I. Financial Integrity (NON-NEGOTIABLE)
 All monetary amounts stored as INTEGER (cents). Never floats. Never strings.
-Display only converts cents → dollars on UI layer. All calculations in cents.
-Every payment operation wrapped in a single database transaction — "all or nothing."
+Display layer only converts cents → dollars on render. All calculations in cents.
+Every payment operation runs within a single atomic database transaction — "all or nothing."
 
 ### II. Security by Default
-Supabase RLS enforced on every table. Users see only their own data.
-Every action endpoint validates: authentication → authorization → business rules.
-No auto-pay: payment requires logged-in session + explicit user action.
+Supabase RLS enforced on every table. Users can access only their own rows.
+Every action endpoint validates in order: authentication → authorization → business rules.
+No auto-pay: all payments require an authenticated session and explicit user confirmation.
 
-### III. Idempotency
-All state-changing operations must be safe to retry.
-Immutable flags: `expired` and `repeated` never revert once set to 1.
-Payment transactions table provides audit log and duplicate prevention.
+### III. Idempotency & Auditability
+All state-changing operations are safe to retry without side effects.
+Immutable flags: `expired` and `repeated` never revert once set to 1 (enforced by DB trigger).
+Payment transactions table provides complete audit trail and duplicate-prevention proof.
 
 ### IV. Expiration Integrity — Double Layer
 Layer 1: Page load checks `expires_at < NOW()` → sets `expired = 1`.
 Layer 2: Daily cron job bulk-updates all overdue requests (Vercel Hobby plan — daily maximum).
 Both layers use `AND expired = 0` guard to stay idempotent.
 
-### V. Test Coverage
-E2E tests (Playwright) cover all happy paths and critical error cases.
-Automated screen recording via Playwright video capture.
-Each test resets balance via Supabase admin client before running.
+### V. Test Coverage & Observability
+E2E tests (Playwright, 91 tests) cover all happy paths and critical error cases.
+Automated screen recording (video capture) for every test run — videos stored in Drive.
+Each test resets balance via Supabase admin client before execution to ensure isolation.
 
 ## Technology Constraints
 
