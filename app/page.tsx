@@ -61,6 +61,7 @@ export default function Dashboard() {
   >(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, number>>({});
+  const [successBanner, setSuccessBanner] = useState<{ action: 'pay' | 'decline' | 'schedule'; amount: number } | null>(null);
   const router = useRouter();
 
   const skipKey = (action: 'pay' | 'decline' | 'schedule') => `confirm-skip-${action}`;
@@ -94,6 +95,8 @@ export default function Dashboard() {
       await new Promise((r) => setTimeout(r, 2000));
       const newStatus = action === 'pay' ? 2 : action === 'decline' ? 3 : 5;
       setStatusOverrides((prev) => ({ ...prev, [req.id]: newStatus }));
+      setSuccessBanner({ action, amount: req.amount });
+      setTimeout(() => setSuccessBanner(null), 3000);
       const meRes = await fetch('/api/auth/user', { credentials: 'include' });
       if (meRes.ok) setMe(await meRes.json());
     } finally {
@@ -438,6 +441,24 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {successBanner && (
+        <div
+          style={{
+            position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+            background: '#10b981', color: 'white', borderRadius: '0.75rem',
+            padding: '0.75rem 1.25rem', fontWeight: 500, fontSize: '0.9rem',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)', zIndex: 60,
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span>✓</span>
+          {successBanner.action === 'pay' && `Payment of ${fmtUSD(successBanner.amount)} sent`}
+          {successBanner.action === 'decline' && `Request for ${fmtUSD(successBanner.amount)} declined`}
+          {successBanner.action === 'schedule' && `Payment of ${fmtUSD(successBanner.amount)} scheduled`}
+        </div>
+      )}
 
       {confirmState && (
         <div

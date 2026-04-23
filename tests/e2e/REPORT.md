@@ -8,7 +8,7 @@
 - **Extensive suite**: 55/55 pass across 8 spec files (auth negatives, validation, authz, security, concurrency ×8, API contract, responsive, UI/UX ×13)
 - **UI/UX coverage**: 13 tests asserting loading spinners, disabled button transitions, error/success banners, empty states, focus management, form validation feedback, and confirmation modals ([13-ui-ux.spec.ts](13-ui-ux.spec.ts)).
 - Video: `video: 'on'` in config for `page`-fixture tests; manually-created contexts use `recordingContext()` helper ([fixtures.ts:80-88](fixtures.ts#L80-L88)).
-- **Drive (public, clean run 2026-04-23 — 15/15 core, 88/88 total)**: https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg (121 webm, 25 MiB)
+- **Drive (public, clean run 2026-04-23 — 15/15 core, 91/91 total)**: https://drive.google.com/drive/folders/1_2bOWcEB2qFBeZZM1ph0gqMacsxb-1pg (121 webm, 25 MiB)
 - **Drive (archive, 2026-04-22 run)**: https://drive.google.com/drive/folders/16bG4spJodfVzBeGS76KPIzssbEOsAh48
 
 ### Resolved — pay / decline / cancel / schedule status race (2026-04-23)
