@@ -82,6 +82,47 @@ function useCountdown(iso: string) {
 const displayName = (p: Party, fallback: string) =>
   p ? `${p.first_name} ${p.last_name}` : fallback;
 
+function ShareButton() {
+  const [copied, setCopied] = useState(false);
+  const handleClick = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard API unavailable (e.g. insecure context) — silently noop */
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label="Copy share link"
+      className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full border border-[var(--color-line)] bg-white hover:bg-[var(--color-bg)] text-[var(--color-ink-3)] transition-colors"
+    >
+      {copied ? (
+        <>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Copied
+        </>
+      ) : (
+        <>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          Share
+        </>
+      )}
+    </button>
+  );
+}
+
 export default function RequestDetail() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -277,7 +318,10 @@ export default function RequestDetail() {
                   <p className="mt-3 text-[var(--color-ink-3)] italic">“{req.note}”</p>
                 )}
               </div>
-              <span className={`chip ${s.chip}`}>{s.label}</span>
+              <div className="flex items-center gap-2">
+                <ShareButton />
+                <span className={`chip ${s.chip}`}>{s.label}</span>
+              </div>
             </div>
 
             {req.status === 7 && req.failure_reason && (
