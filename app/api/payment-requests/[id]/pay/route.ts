@@ -43,18 +43,21 @@ export async function POST(
     );
   }
 
+  // Expired-first so the user sees the real reason (7-day rule) instead of
+  // a generic "status=4" message when the cron has already flipped the row.
+  if (
+    paymentReq.status === 4 ||
+    paymentReq.expired === 1 ||
+    new Date(paymentReq.expires_at) < new Date()
+  ) {
+    return badRequest('REQUEST_EXPIRED', 'This payment request has expired and can no longer be paid.');
+  }
+
   if (paymentReq.status !== 1) {
     return conflict(
       'INVALID_STATUS',
       `Request is not pending (current status: ${paymentReq.status}).`
     );
-  }
-
-  if (
-    paymentReq.expired === 1 ||
-    new Date(paymentReq.expires_at) < new Date()
-  ) {
-    return badRequest('REQUEST_EXPIRED', 'This payment request has expired.');
   }
 
   const admin = createAdminClient();
